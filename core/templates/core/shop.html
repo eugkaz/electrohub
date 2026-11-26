@@ -1,0 +1,96 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load i18n %}
+{% load custom_filters %}
+
+{% block title %}
+    {% if active_category_name %}
+        {{ active_category_name }} - {% trans "Каталог" %}
+    {% elif query %}
+        {% blocktrans with query_term=query %}Пошук: "{{ query_term }}"{% endblocktrans %} - {% trans "Каталог" %}
+    {% else %}
+        {% trans "Каталог товарів" %}
+    {% endif %}
+    {% if page_obj.number > 1 %} - {% blocktrans with page_num=page_obj.number %}Сторінка {{ page_num }}{% endblocktrans %}{% endif %}
+    | ElectroHub
+{% endblock %}
+
+{% block extra_css %}
+    <style>
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        .sidebar-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .sidebar-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        .sidebar-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        [x-cloak] { display: none !important; }
+        .fade-enter-active, .fade-leave-active { transition: opacity 200ms ease-in-out; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .slide-enter-active { transition: transform 300ms ease-out; }
+        .slide-enter-from { transform: translateX(-100%); }
+        .slide-enter-to { transform: translateX(0); }
+        .slide-leave-active { transition: transform 300ms ease-in; }
+        .slide-leave-from { transform: translateX(0); }
+        .slide-leave-to { transform: translateX(-100%); }
+        .custom-checkbox { appearance: none; -webkit-appearance: none; width: 1rem; height: 1rem; border: 1px solid #d1d5db; border-radius: 0.25rem; cursor: pointer; position: relative; vertical-align: middle; }
+        .custom-checkbox:checked { border-color: #f59e0b; background-color: #f59e0b; }
+        .custom-checkbox:checked::after { content: '✓'; display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.75rem; color: white; font-weight: bold; line-height: 1; }
+        .custom-checkbox:focus { outline: none; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4); }
+   /* Стилі для зірок */
+        .rating-star { fill: #facc15; /* yellow-400 */ }
+        .rating-star-inactive { fill: #d1d5db; /* gray-300 */ }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="lg:grid lg:grid-cols-4 lg:gap-x-8 xl:gap-x-12 py-8 lg:py-10" x-data="{ mobileFiltersOpen: false }">
+       {# Кнопка фільтрів мобільна #}
+            <div class="lg:hidden fixed bottom-5 right-5 z-40"> <button @click="mobileFiltersOpen = true" class="p-3 bg-yellow-400 text-gray-900 rounded-full shadow-lg hover:bg-yellow-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"> <span class="sr-only">{% trans "Відкрити фільтри" %}</span> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg> </button> </div>
+
+       {# Сайдбар Фільтрів #}
+            <aside class="lg:col-span-1">
+           {# Мобільне вікно #}
+                <div x-show="mobileFiltersOpen" x-cloak class="relative z-50 lg:hidden" role="dialog" aria-modal="true">
+                    <div class="fixed inset-y-0 left-0 flex w-full max-w-xs transform" x-show="mobileFiltersOpen" x-transition:enter="slide-enter-active" x-transition:enter-start="slide-enter-from" x-transition:enter-end="slide-enter-to" x-transition:leave="slide-leave-active" x-transition:leave-start="slide-leave-from" x-transition:leave-end="slide-leave-to"> <div class="relative flex w-full max-w-xs flex-col overflow-y-auto bg-white pb-12 shadow-xl"> <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10"> <h2 class="text-lg font-medium text-gray-900">{% trans "Фільтри" %}</h2> <button type="button" @click="mobileFiltersOpen = false" class="-mr-2 flex h-10 w-10 items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"> <span class="sr-only">{% trans "Закрити меню" %}</span> <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> </button> </div> <form method="get" action="{{ request.path }}" class="divide-y divide-gray-100 px-4"> {% include "core/partials/shop_filters_content.html" %} <div class="py-6 sticky bottom-0 bg-white border-t border-gray-200"> <button type="submit" @click="mobileFiltersOpen = false" class="w-full py-2.5 px-4 bg-yellow-400 text-gray-900 font-semibold text-sm rounded-lg shadow-sm hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200"> {% trans "Застосувати фільтри" %} </button> {% if request.GET|has_non_page_params %} <a href="{{ request.path }}{% if query %}?q={{ query }}{% endif %}" @click="mobileFiltersOpen = false" class="mt-2 block w-full text-center py-2 px-4 text-gray-600 font-medium text-sm rounded-lg hover:bg-gray-100 transition-colors duration-200"> {% trans "Скинути все" %} </a> {% endif %} </div> </form> </div> </div>
+                    <div class="fixed inset-0 bg-black bg-opacity-25 transition-opacity duration-300 ease-linear" x-show="mobileFiltersOpen" x-transition:enter="fade-enter-active" x-transition:enter-start="fade-enter-from" x-transition:enter-end="opacity-100" x-transition:leave="fade-leave-active" x-transition:leave-start="opacity-100" x-transition:leave-end="fade-leave-to" @click="mobileFiltersOpen = false"></div>
+                </div>
+
+           {# Десктопна Форма Фільтрів #}
+                <div class="hidden lg:block lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:sidebar-scrollbar lg:pr-4">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Фільтри" %}</h3>
+                    <form method="get" action="{{ request.path }}" class="space-y-5 border border-gray-200/75 rounded-xl p-5 bg-white shadow-sm">
+                        {% include "core/partials/shop_filters_content.html" %}
+                        <div class="pt-4 border-t border-gray-200">
+                            <button type="submit" class="w-full py-2 px-4 bg-yellow-400 text-gray-900 font-semibold text-sm rounded-lg shadow-sm hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200"> {% trans "Застосувати" %} </button>
+                            {% if request.GET|has_non_page_params %} <a href="{{ request.path }}{% if query %}?q={{ query }}{% endif %}" class="mt-2 block w-full text-center py-2 px-4 text-gray-600 font-medium text-sm rounded-lg hover:bg-gray-100 transition-colors duration-200"> {% trans "Скинути фільтри" %} </a> {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </aside>
+
+       {# --- ОСНОВНИЙ КОНТЕНТ: ТОВАРИ --- #}
+            <main class="lg:col-span-3 mt-8 lg:mt-0">
+                <div class="pb-4 border-b border-gray-200"> <h1 class="text-3xl font-bold tracking-tight text-gray-900 mb-1"> {% if active_category_name %} {{ active_category_name }} {% elif query %} {% blocktrans with query_term=query %}Результати пошуку: "{{ query_term }}"{% endblocktrans %} {% else %} {% trans "Каталог товарів" %} {% endif %} </h1> <p class="text-sm text-gray-600"> {% blocktrans count counter=paginator.count %}Знайдено {{ counter }} товар{% plural %}Знайдено {{ counter }} товарів{% endblocktrans %} </p> </div>
+
+           {# Активні фільтри (Бейджи) #}
+                {% if request.GET|has_non_page_params %} <div class="pt-4 pb-2"> <div class="flex flex-wrap items-center gap-2"> <span class="text-sm font-medium text-gray-700 mr-1">{% trans "Активні фільтри:" %}</span> {% if current_min_price != min_product_price or current_max_price != max_product_price %} <span class="inline-flex items-center gap-x-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 whitespace-nowrap"> ₴ {{ current_min_price }} - {{ current_max_price }} <a href="?{{ request.GET.urlencode|remove_param:'min_price'|remove_param:'max_price'|remove_param:'page' }}" class="group relative -mr-1 h-3.5 w-3.5 rounded-sm hover:bg-gray-500/20" title="{% trans 'Видалити фільтр ціни' %}"> <span class="sr-only">{% trans "Видалити" %}</span> <svg viewBox="0 0 14 14" class="h-3.5 w-3.5 stroke-gray-600/50 group-hover:stroke-gray-600/75"><path d="M4 4l6 6m0-6l-6 6" /></svg> <span class="absolute -inset-1"></span> </a> </span> {% endif %} {% for brand_slug in selected_brands %} <span class="inline-flex items-center gap-x-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 whitespace-nowrap"> {{ brand_slug|get_brand_name_by_slug }} {% with param_info="brand:"|add:brand_slug %} <a href="?{{ request.GET.urlencode|remove_param_value:param_info|remove_param:'page' }}" class="group relative -mr-1 h-3.5 w-3.5 rounded-sm hover:bg-gray-500/20" title="{% trans 'Видалити фільтр бренду' %}"> <span class="sr-only">{% trans "Видалити" %}</span> <svg viewBox="0 0 14 14" class="h-3.5 w-3.5 stroke-gray-600/50 group-hover:stroke-gray-600/75"><path d="M4 4l6 6m0-6l-6 6" /></svg> <span class="absolute -inset-1"></span> </a> {% endwith %} </span> {% endfor %} {% if selected_rating %} <span class="inline-flex items-center gap-x-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 whitespace-nowrap"> {% blocktrans with rating_val=selected_rating %}Від {{ rating_val }} ★{% endblocktrans %} <a href="?{{ request.GET.urlencode|remove_param:'rating_gte'|remove_param:'page' }}" class="group relative -mr-1 h-3.5 w-3.5 rounded-sm hover:bg-gray-500/20" title="{% trans 'Видалити фільтр рейтингу' %}"> <span class="sr-only">{% trans "Видалити" %}</span> <svg viewBox="0 0 14 14" class="h-3.5 w-3.5 stroke-gray-600/50 group-hover:stroke-gray-600/75"><path d="M4 4l6 6m0-6l-6 6" /></svg> <span class="absolute -inset-1"></span> </a> </span> {% endif %} {% if in_stock %} <span class="inline-flex items-center gap-x-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 whitespace-nowrap"> {% trans "В наявності" %} <a href="?{{ request.GET.urlencode|remove_param:'in_stock'|remove_param:'page' }}" class="group relative -mr-1 h-3.5 w-3.5 rounded-sm hover:bg-gray-500/20" title="{% trans 'Видалити фільтр наявності' %}"> <span class="sr-only">{% trans "Видалити" %}</span> <svg viewBox="0 0 14 14" class="h-3.5 w-3.5 stroke-gray-600/50 group-hover:stroke-gray-600/75"><path d="M4 4l6 6m0-6l-6 6" /></svg> <span class="absolute -inset-1"></span> </a> </span> {% endif %} <a href="{{ request.path }}{% if query %}?q={{ query }}{% endif %}" class="ml-1 inline-block text-xs font-medium text-yellow-600 hover:text-yellow-500 hover:underline">{% trans "Скинути всі" %}</a> </div> </div> {% endif %}
+
+           {# Сітка Товарів #}
+                {% if not products %}
+                    <div class="text-center py-16 px-6 bg-gray-50 rounded-lg mt-6 border border-dashed border-gray-300"> <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM13.5 13.5h-6" /> </svg> <h3 class="mt-3 text-lg font-semibold text-gray-900">{% trans "Товари не знайдено" %}</h3> <p class="mt-1 text-sm text-gray-600">{% trans "На жаль, за вашим запитом та фільтрами нічого не знайдено. Спробуйте змінити параметри." %}</p> <div class="mt-5"> <a href="{{ request.path }}{% if query %}?q={{ query }}{% endif %}" class="inline-flex items-center rounded-md bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-gray-900 shadow-sm hover:bg-yellow-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-500"> {% trans "Скинути фільтри" %} </a> </div> </div>
+                {% else %}
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 mt-6">
+                        {% for product in products %}
+                            {% include 'product/partials/item_list_product.html' with product=product favorite_status=favorite_status source='shop' %}
+                        {% endfor %}
+                    </div>
+                    {% include 'core/partials/pagination.html' with page_obj=page_obj paginator=paginator %}
+                {% endif %}
+            </main>
+        </div>
+    </div>
+
+{# AlpineJS #}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+{% endblock %}

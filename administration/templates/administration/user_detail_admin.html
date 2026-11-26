@@ -1,0 +1,152 @@
+{% extends 'administration/base_admin.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block admin_title %}{{ page_title|default:_("Деталі Користувача") }} - ElectoHub Admin{% endblock %}
+
+{% block page_header %}
+    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-3">
+        <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">{{ page_title|default:_("Деталі Користувача") }}</h1>
+        <div>
+            <a href="{% url 'administration:user_list' %}" class="text-sm text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300 font-medium inline-flex items-center mr-4">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                {% trans "До списку користувачів" %}
+            </a>
+            <a href="{% url 'administration:user_update' target_user.pk %}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition inline-flex items-center shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 19.07a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125M12 15v5.25a.75.75 0 01-.75.75H6.75a.75.75 0 01-.75-.75V15m0 0H3.75a.75.75 0 01-.75-.75V9.75a.75.75 0 01.75-.75h1.5M3.75 15h3.75M3.75 9.75h1.5M12 9.75h3.75M12 15h3.75M12 3.75v5.25M16.5 3.75v5.25M16.5 9.75h1.5A.75.75 0 0119.5 9v.75M19.5 9.75h-1.5m0 0V3.75M19.5 15v-3.75M15 9.75H9.75M15 15H9.75"></path></svg>
+                {% trans "Редагувати" %}
+            </a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block admin_content %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {# Ліва колонка: Основна інформація та профіль #}
+        <div class="lg:col-span-2 bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="p-6">
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                    <div class="relative group shrink-0">
+                        <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-md ring-2 ring-yellow-400 dark:ring-yellow-500 bg-gray-200 dark:bg-gray-600">
+                            {% if target_user.profile.avatar and target_user.profile.avatar.url %}
+                                <img src="{{ target_user.profile.avatar.url }}" alt="Аватар {{ target_user.username }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <span class="flex items-center justify-center w-full h-full text-3xl sm:text-4xl font-semibold text-gray-400 dark:text-gray-500">
+                                    {{ target_user.username|slice:":1"|upper }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex-grow text-center sm:text-left">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ target_user.get_full_name|default:target_user.username }}</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ target_user.email }}</p>
+                        <div class="mt-3 space-x-2">
+                            {% if target_user.is_active %}
+                                <span class="inline-block px-2.5 py-0.5 text-xs font-semibold text-green-800 bg-green-100 dark:bg-green-700/30 dark:text-green-300 rounded-full">{% trans "Активний" %}</span>
+                            {% else %}
+                                <span class="inline-block px-2.5 py-0.5 text-xs font-semibold text-red-800 bg-red-100 dark:bg-red-700/30 dark:text-red-300 rounded-full">{% trans "Неактивний" %}</span>
+                            {% endif %}
+                            {% if target_user.is_staff %}
+                                <span class="inline-block px-2.5 py-0.5 text-xs font-semibold text-blue-800 bg-blue-100 dark:bg-blue-700/30 dark:text-blue-300 rounded-full">{% trans "Персонал" %}</span>
+                            {% endif %}
+                            {% if target_user.is_superuser %}
+                                <span class="inline-block px-2.5 py-0.5 text-xs font-semibold text-purple-800 bg-purple-100 dark:bg-purple-700/30 dark:text-purple-300 rounded-full">{% trans "Суперкористувач" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-gray-700 px-6 py-5">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 text-sm">
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">{% trans "Логін" %}</dt>
+                        <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ target_user.username }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">Email</dt>
+                        <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ target_user.email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">{% trans "Ім'я" %}</dt>
+                        <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ target_user.first_name|default:"-" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">{% trans "Прізвище" %}</dt>
+                        <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ target_user.last_name|default:"-" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">{% trans "Дата реєстрації" %}</dt>
+                        <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ target_user.date_joined|date:"d F Y, H:i" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">{% trans "Останній вхід" %}</dt>
+                        <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ target_user.last_login|date:"d F Y, H:i"|default:"Ніколи" }}</dd>
+                    </div>
+                {# Додайте інші поля профілю, якщо потрібно, наприклад: #}
+                {# {% if target_user.profile.phone_number %}
+                <div>
+                    <dt class="font-medium text-gray-500 dark:text-gray-400">Телефон профілю</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-gray-100">{{ target_user.profile.phone_number }}</dd>
+                </div>
+                {% endif %} #}
+                </dl>
+            </div>
+        </div>
+
+    {# Права колонка: активність користувача #}
+        <div class="lg:col-span-1 space-y-6">
+            {% if user_orders_list %}
+                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{% trans "Останні замовлення" %} ({{ user_orders_list.count }})</h3>
+                    {% if user_orders_list %}
+                        <ul class="divide-y divide-gray-200 dark:divide-gray-700 max-h-80 overflow-y-auto simple-scrollbar pr-1">
+                            {% for order_item_user in user_orders_list %}
+                                <li class="py-2.5">
+                                    <div class="flex justify-between items-center text-sm">
+                                        <a href="{% url 'administration:order_detail_admin' order_item_user.pk %}" class="text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300 font-medium">
+                                            #{{ order_item_user.id }} - {{ order_item_user.created_at|date:"d.m.y" }}
+                                        </a>
+                                        <span class="text-gray-700 dark:text-gray-300">{{ order_item_user.total_price|floatformat:2 }} грн</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ order_item_user.get_status_display }}</p>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        {% if user_orders_list.count >= 10 %} {# Або інше число #}
+                            <div class="mt-3 text-right">
+                                <a href="{% url 'administration:order_list' %}?q={{ target_user.username }}" class="text-xs text-yellow-600 hover:underline">{% trans "Всі замовлення користувача" %}</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{% trans "У цього користувача немає замовлень." %}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+        {# Тут можна додати інші блоки активності: Оголошення, Теми на форумі тощо #}
+            {% if user_listings_list %}
+                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{% trans "Останні оголошення" %} ({{ user_listings_list.count }})</h3>
+                    <ul class="divide-y divide-gray-200 dark:divide-gray-700 max-h-80 overflow-y-auto simple-scrollbar pr-1">
+                        {% for listing_item_user in user_listings_list %}
+                            <li class="py-2.5">
+                                <a href="{% url 'administration:listing_update' listing_item_user.pk %}" class="text-sm font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300 block truncate" title="{{ listing_item_user.title }}">
+                                    {{ listing_item_user.title }}
+                                </a>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ listing_item_user.created_at|date:"d.m.y" }} - {{ listing_item_user.get_status_display }}</p>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    {% if user_listings_list.count >= 5 %}
+                        <div class="mt-3 text-right">
+                            <a href="{% url 'administration:listing_list' %}?q={{ target_user.username }}" class="text-xs text-yellow-600 hover:underline">{% trans "Всі оголошення користувача" %}</a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+{% endblock %}

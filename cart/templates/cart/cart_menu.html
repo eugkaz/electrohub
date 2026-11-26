@@ -1,0 +1,43 @@
+{# cart/partials/cart_menu.html #}
+{% load static %}
+{% load custom_filters %} {# Якщо цей фільтр використовується, залиште #}
+
+{% if current_cart_object %} {# Змінено з 'cart' на 'current_cart_object' з context_processors.py #}
+    <ul class="divide-y divide-gray-100">
+        {% for item_dict in current_cart_object %} {# Ітеруємо по об'єкту Cart, який тепер повертає словники #}
+            <li class="flex items-center py-2.5 px-4 gap-x-3 hover:bg-gray-50 transition-colors duration-150">
+                <div class="flex-shrink-0">
+                {# item_dict.product - це об'єкт Product #}
+                    <img src="{{ item_dict.product.get_thumbnail }}"
+                         alt="{{ item_dict.product.name }}"
+                         class="w-10 h-10 object-cover rounded-md border border-gray-200">
+                </div>
+                <div class="flex-1 min-w-0">
+                    <a href="{{ item_dict.product.get_absolute_url }}"
+                       class="block text-sm font-medium text-gray-800 hover:text-yellow-600 truncate transition-colors duration-150"
+                       title="{{ item_dict.product.name }}">
+                        {{ item_dict.product.name }}
+                    </a>
+                    <div class="flex justify-between items-center mt-0.5">
+                        <p class="text-xs text-gray-500">
+                        {# item_dict.quantity - кількість #}
+                        {# item_dict.price - ціна за одиницю (Decimal) #}
+                            {{ item_dict.quantity }} x {{ item_dict.price|floatformat:"0" }} ₴
+                        </p>
+                        <p class="text-sm font-semibold text-gray-900">
+                         {# item_dict.total_price - загальна вартість позиції (Decimal) #}
+                            {{ item_dict.total_price|floatformat:"0" }} ₴
+                        </p>
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+    <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 text-right">
+        <span class="text-sm font-medium text-gray-600">Всього:</span>
+        {# current_cart_object.get_total_cost() - метод для загальної суми #}
+        <span class="text-base font-bold text-gray-900 ml-1">{{ current_cart_object.get_total_cost|floatformat:"0" }} ₴</span>
+    </div>
+{% else %}
+    <p class="text-gray-500 text-sm text-center py-6 px-4">Ваш кошик порожній.</p>
+{% endif %}

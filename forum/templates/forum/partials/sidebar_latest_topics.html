@@ -1,0 +1,20 @@
+{% if latest_topics %}
+    <div class="bg-white p-5 rounded-xl shadow-xl border border-gray-200/75">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3 flex items-center gap-x-2">
+            <svg class="w-5 h-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" /> </svg>
+            Останні Активності
+        </h3>
+        <ul class="space-y-3.5">
+            {% for topic in latest_topics %}
+                <li class="text-sm leading-tight">
+                    <a href="{% url 'topic-detail' topic.id %}" class="font-semibold text-gray-800 hover:text-yellow-700 line-clamp-2 transition-colors duration-150" title="{{ topic.title }}">
+                        {{ topic.title }}
+                    </a>
+                    <div class="text-xs text-gray-500 mt-0.5">
+                        від <span class="font-medium">{{ topic.author.user.username }}</span>, {{ topic.last_activity|timesince }} тому
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}

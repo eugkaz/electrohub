@@ -1,0 +1,60 @@
+{% load i18n %}
+{% load custom_filters %} {# Переконайся, що теги завантажено #}
+
+{% if paginator.num_pages > 1 %}
+    <nav class="mt-8 border-t border-gray-200 pt-6 flex items-center justify-between" aria-label="{% trans 'Pagination' %}">
+    {# --- Кнопка "Попередня" --- #}
+        <div class="-mt-px flex w-0 flex-1">
+            {% if page_obj.has_previous %}
+            {# --- ВИПРАВЛЕНО: Використовуємо query_params --- #}
+                {% query_params page=page_obj.previous_page_number as prev_url_params %}
+                <a href="{{ request.path }}{{ prev_url_params }}" class="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                    <svg class="mr-3 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a.75.75 0 01-.75.75H4.66l2.1 1.95a.75.75 0 11-1.02 1.1l-3.5-3.25a.75.75 0 010-1.1l3.5-3.25a.75.75 0 111.02 1.1l-2.1 1.95h12.59A.75.75 0 0118 10z" clip-rule="evenodd" /></svg>
+                    {% trans "Попередня" %}
+                </a>
+            {# --- КІНЕЦЬ ВИПРАВЛЕННЯ --- #}
+            {% else %}
+            {# Неактивна кнопка "Попередня" (можна залишити або прибрати) #}
+                <span class="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-400 cursor-not-allowed">
+                    <svg class="mr-3 h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a.75.75 0 01-.75.75H4.66l2.1 1.95a.75.75 0 11-1.02 1.1l-3.5-3.25a.75.75 0 010-1.1l3.5-3.25a.75.75 0 111.02 1.1l-2.1 1.95h12.59A.75.75 0 0118 10z" clip-rule="evenodd" /></svg>
+                    {% trans "Попередня" %}
+                </span>
+            {% endif %}
+        </div>
+
+    {# --- Номери сторінок --- #}
+        <div class="hidden md:-mt-px md:flex">
+            {% for num in paginator.get_elided_page_range %} {# Використовуємо скорочений діапазон #}
+                {% if num == paginator.ELLIPSIS %}
+                    <span class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">...</span>
+                {% elif num == page_obj.number %}
+                    <span class="inline-flex items-center border-t-2 border-yellow-500 px-4 pt-4 text-sm font-semibold text-yellow-600" aria-current="page">{{ num }}</span>
+                {% else %}
+                {# --- ВИПРАВЛЕНО: Використовуємо query_params --- #}
+                    {% query_params page=num as page_url_params %}
+                    <a href="{{ request.path }}{{ page_url_params }}" class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">{{ num }}</a>
+                {# --- КІНЕЦЬ ВИПРАВЛЕННЯ --- #}
+                {% endif %}
+            {% endfor %}
+        </div>
+
+    {# --- Кнопка "Наступна" --- #}
+        <div class="-mt-px flex w-0 flex-1 justify-end">
+            {% if page_obj.has_next %}
+             {# --- ВИПРАВЛЕНО: Використовуємо query_params --- #}
+                {% query_params page=page_obj.next_page_number as next_url_params %}
+                <a href="{{ request.path }}{{ next_url_params }}" class="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                    {% trans "Наступна" %}
+                    <svg class="ml-3 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M2 10a.75.75 0 01.75-.75h12.59l-2.1-1.95a.75.75 0 111.02-1.1l3.5 3.25a.75.75 0 010 1.1l3.5-3.25a.75.75 0 11-1.02 1.1l2.1 1.95H2.75A.75.75 0 012 10z" clip-rule="evenodd" /></svg>
+                </a>
+             {# --- КІНЕЦЬ ВИПРАВЛЕННЯ --- #}
+            {% else %}
+             {# Неактивна кнопка "Наступна" #}
+                <span class="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-400 cursor-not-allowed">
+                    {% trans "Наступна" %}
+                    <svg class="ml-3 h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M2 10a.75.75 0 01.75-.75h12.59l-2.1-1.95a.75.75 0 111.02-1.1l3.5 3.25a.75.75 0 010 1.1l3.5-3.25a.75.75 0 11-1.02 1.1l2.1 1.95H2.75A.75.75 0 012 10z" clip-rule="evenodd" /></svg>
+                </span>
+            {% endif %}
+        </div>
+    </nav>
+{% endif %}

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="uk" class="scroll-smooth">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="htmx-config" content='{"withCredentials": true}'>
+        <script src="https://cdn.tailwindcss.com"></script>
+        {% block extra_head %} {% endblock %}
+  {# Подключаем Leaflet здесь, чтобы он был доступен на всех страницах, включая карту #}
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+        <title>{% block title %}{% block admin_title %}Панель Адміністратора{% endblock %} - {{ site_name|default:"ElecrtoHub Admin" }}{% endblock %} | ElecrtoHub</title>
+
+        {% load static %}
+        {% load i18n %}
+
+
+
+        {% block page_meta %}
+    {# Можна додати мета-теги специфічні для адмінки, наприклад, noindex #}
+            <meta name="robots" content="noindex, nofollow">
+            {{ block.super }}
+        {% endblock %}
+
+{# Перевизначаємо блок 'content' з main.html #}
+        {% block content %}
+            <div class="flex min-h-screen bg-gray-100 dark:bg-gray-900"> {# Додав підтримку темної теми, якщо є #}
+    <!-- Бічна панель навігації для адмінки -->
+                {% include 'administration/partials/sidebar.html' %}
+
+    <!-- Основний контент адмінки -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+        {# Якщо хедер з main.html не підходить, або потрібен додатковий, розкоментуйте свій кастомний #}
+                    {% include 'administration/partials/admin_header.html' %} {# Змінив назву, щоб не плутати з сайтовим #}
+
+                    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-4 sm:p-6 md:p-8">
+                        <div class="container mx-auto px-0 sm:px-0"> {# Забрав px для контейнера, бо p- є у main #}
+                            {% block page_header %}
+                {# Заголовок сторінки та хлібні крихти для адмінки #}
+                            {% endblock %}
+
+                {# Відображення повідомлень Django #}
+                            {% if messages %}
+                                <div class="mb-4 space-y-3">
+                                    {% for message in messages %}
+                                        <div class="p-4 rounded-md shadow-sm text-sm
+                                                    {% if message.tags == 'error' %}bg-red-100 border border-red-300 text-red-700 dark:bg-red-800/30 dark:text-red-300 dark:border-red-700
+                                                    {% elif message.tags == 'success' %}bg-green-100 border border-green-300 text-green-700 dark:bg-green-800/30 dark:text-green-300 dark:border-green-700
+                                                    {% elif message.tags == 'warning' %}bg-yellow-100 border border-yellow-400 text-yellow-700 dark:bg-yellow-700/30 dark:text-yellow-300 dark:border-yellow-600
+                                                    {% else %}bg-blue-100 border border-blue-300 text-blue-700 dark:bg-blue-800/30 dark:text-blue-300 dark:border-blue-700{% endif %}"
+                                             role="alert">
+                                            {{ message|safe }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% block admin_content %}
+
+                            {% endblock %}
+                        </div>
+                    </main>
+        {# Футер буде успадковано з core/main.html #}
+                </div>
+            </div>
+        {% endblock %}
+
+        {% block body_scripts %} {# Або ваш блок для скриптів з main.html #}
+            {{ block.super }} {# Включаємо скрипти з батьківського шаблону #}
+            <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {# <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"></script> #}
+            {% block extra_admin_scripts %}{% endblock %} {# Окремий блок для скриптів адмін-сторінок #}
+        {% endblock %}
+
+        {% block head_css %} {# Або ваш блок для CSS з main.html #}
+            {{ block.super }} {# Включаємо CSS з батьківського шаблону #}
+            {% block extra_admin_head %}{% endblock %} {# Окремий блок для CSS адмін-сторінок #}
+        {% endblock %}

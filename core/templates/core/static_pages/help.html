@@ -1,0 +1,47 @@
+{% extends 'core/main.html' %}
+{% load i18n static %}
+{% block title %}{% trans "Допомога та FAQ" %}{% endblock %}
+
+{% block content %}
+<div class="bg-slate-50 py-16 sm:py-20">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden ring-1 ring-gray-900/5">
+      <div class="p-8 sm:p-12">
+        
+        <div class="text-center">
+          <div class="inline-flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-br from-yellow-100 to-amber-200 mb-5">
+            <svg class="h-8 w-8 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+            </svg>
+          </div>
+          <h1 class="text-4xl font-bold tracking-tight text-gray-900">{% trans "Центр Допомоги" %}</h1>
+          <p class="mt-3 text-lg text-gray-600">{% trans "Відповіді на найпоширеніші запитання." %}</p>
+        </div>
+
+        <div class="mt-12 prose prose-lg prose-slate max-w-none prose-h2:border-b prose-h2:pb-2 prose-h2:border-gray-200 prose-a:text-indigo-600 prose-a:font-semibold hover:prose-a:text-indigo-500 prose-ul:list-disc prose-ul:pl-6">
+          <h2>{% trans "Часті запитання (FAQ)" %}</h2>
+          
+          <h3>{% trans "Як підключити транспорт?" %}</h3>
+          <p>{% trans "Щоб підключити ваш транспортний засіб, перейдіть до розділу 'Мій акаунт', знайдіть блок 'Мій транспорт' і натисніть кнопку 'Підключити'. Вам знадобиться унікальний UUID вашого пристрою, який зазвичай знаходиться на наліпці або в документації." %}</p>
+
+          <h3>{% trans "Як згенерувати звіт про стан транспорту?" %}</h3>
+          <p>{% trans "На сторінці деталей вашого транспорту є кнопка 'Згенерувати AI Звіт'. Натисніть її, щоб отримати детальний аналіз поточного стану, рівня заряду та корисні рекомендації." %}</p>
+          
+          <h3>{% trans "Де знайти історію моїх замовлень?" %}</h3>
+          <p>{% trans "Вся історія ваших замовлень товарів та послуг доступна на сторінці 'Мій акаунт' у відповідному розділі. Ви можете переглянути статус кожного замовлення та його деталі." %}</p>
+
+          <hr class="my-10">
+
+          <h2>{% trans "Зв'язок з підтримкою" %}</h2>
+          <p>{% trans "Якщо ви не знайшли відповідь на своє запитання, будь ласка, зв'яжіться з нашою службою підтримки. Ми завжди готові допомогти!" %}</p>
+          <ul>
+              <li><strong>Email:</strong> <a href="mailto:support@example.com">support@example.com</a></li>
+              <li><strong>Телефон:</strong> <a href="tel:+380000000000">+38 (067) 122-40-54</a></li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

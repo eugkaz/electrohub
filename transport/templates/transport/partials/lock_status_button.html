@@ -1,0 +1,13 @@
+{% load i18n %}
+<span id="lock-status-text" class="font-medium {% if vehicle.is_locked %}text-red-600{% else %}text-green-600{% endif %}">
+    {% if vehicle.is_locked %}{% trans "Заблоковано" %}{% else %}{% trans "Розблоковано" %}{% endif %}
+</span>
+<button type="button"
+        hx-post="{% url 'transport:toggle_lock' vehicle.pk %}"
+        hx-target="#lock-status-container"
+        hx-swap="innerHTML"
+        class="ml-4 px-3 py-1 text-xs font-medium rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1
+               {% if vehicle.is_locked %}bg-green-100 text-green-700 hover:bg-green-200 focus:ring-green-500 border border-green-300
+               {% else %}bg-red-100 text-red-700 hover:bg-red-200 focus:ring-red-500 border border-red-300{% endif %}">
+    {% if vehicle.is_locked %}{% trans "Розблокувати" %}{% else %}{% trans "Заблокувати" %}{% endif %}
+</button>

@@ -1,0 +1,115 @@
+{# administration/templates/administration/user_list.html #}
+{% extends 'administration/base_admin.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block admin_title %}{{ page_title|default:_("Список Користувачів") }}{% endblock %}
+
+{% block page_header %}
+    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-3 sm:gap-4">
+        <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">{{ page_title|default:_("Список Користувачів") }}</h1>
+        {# Можна додати кнопку "Додати користувача", якщо є відповідний URL #}
+        {# <a href="{% url 'administration:user_create_admin' %}" class="...">Додати Користувача</a> #}
+    </div>
+
+    <!-- Форма пошуку та фільтрів -->
+    <form method="get" class="mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
+            <div>
+                <label for="q_search" class="block text-xs font-medium text-gray-600 dark:text-gray-400">{% trans "Пошук" %}</label>
+                <input type="text" name="q" id="q_search" value="{{ search_query|default:'' }}" placeholder="{% trans "Логін, email, ім'я..." %}" class="mt-1 form-input block w-full ...">
+            </div>
+            <div>
+                <label for="is_staff_filter" class="block text-xs font-medium text-gray-600 dark:text-gray-400">{% trans "Персонал" %}</label>
+                <select name="is_staff" id="is_staff_filter" class="mt-1 form-select block w-full ...">
+                    <option value="">{% trans "Всі" %}</option>
+                    <option value="true" {% if is_staff_filter == 'true' %}selected{% endif %}>{% trans "Так" %}</option>
+                    <option value="false" {% if is_staff_filter == 'false' %}selected{% endif %}>{% trans "Ні" %}</option>
+                </select>
+            </div>
+            <div>
+                <label for="is_active_filter" class="block text-xs font-medium text-gray-600 dark:text-gray-400">{% trans "Активність" %}</label>
+                <select name="is_active" id="is_active_filter" class="mt-1 form-select block w-full ...">
+                    <option value="">{% trans "Всі" %}</option>
+                    <option value="true" {% if is_active_filter == 'true' %}selected{% endif %}>{% trans "Активні" %}</option>
+                    <option value="false" {% if is_active_filter == 'false' %}selected{% endif %}>{% trans "Неактивні" %}</option>
+                </select>
+            </div>
+            <div class="flex items-end space-x-2 pt-1 md:col-start-3">
+                <button type="submit" class="w-full flex-grow bg-gray-700 ...">{% trans "Застосувати" %}</button>
+                {% if request.GET.q or request.GET.is_staff or request.GET.is_active %}
+                    <a href="{% url request.resolver_match.url_name %}" class="w-full flex-grow mt-2 sm:mt-0 ...">{% trans "Скинути" %}</a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block admin_content %}
+    <div class="bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            {% if users_list %}
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700/50">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% trans "Логін" %}</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% trans "Ім'я" %}</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% trans "Статус" %}</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% trans "Персонал" %}</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% trans "Замовлень" %}</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% trans "Дата рег." %}</th>
+                            <th class="relative px-4 py-3"><span class="sr-only">{% trans "Дії" %}</span></th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {% for user_obj in users_list %} {# users_list - це context_object_name #}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                                <td scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ user_obj.pk }}</td>
+                                <td scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <a href="{% url 'administration:user_detail_admin' user_obj.pk %}" class="font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300">
+                                        {{ user_obj.username }}
+                                    </a>
+                                </td>
+                                <td scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ user_obj.email|default:"-" }}</td>
+                                <td scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ user_obj.get_full_name|default:"-" }}</td>
+                                <td scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    {% if user_obj.is_active %}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{% trans "Активний" %}</span>
+                                    {% else %}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">{% trans "Неактивний" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    {% if user_obj.is_staff %}
+                                        <span class="text-green-600 dark:text-green-400 font-semibold">{% trans "Так" %}</span>
+                                    {% else %}
+                                        <span class="text-gray-500 dark:text-gray-400">{% trans "Ні" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ user_obj.orders_count_ann|default:0 }}</td> {# Використовуємо анотацію #}
+                                <td scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ user_obj.date_joined|date:"d.m.Y" }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                                    <a href="{% url 'administration:user_update' user_obj.pk %}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300" title="{% trans "Редагувати" %}"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L7.029 17.971H4.202v-2.828l10.058-10.057z"></path></svg></a>
+                        {# <a href="#" class="text-red-600 hover:text-red-900">Видалити</a> #}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="p-6 text-center text-gray-500 dark:text-gray-400">
+                    {% if request.GET.q or request.GET.is_staff or request.GET.is_active %}
+                        {% trans "За вашими критеріями користувачів не знайдено." %}
+                    {% else %}
+                        {% trans "Немає користувачів для відображення." %}
+                    {% endif %}
+                </p>
+            {% endif %}
+        </div>
+        {% if is_paginated %}
+            {% include 'administration/partials/pagination.html' with page_obj=page_obj paginator=paginator request_get=request.GET %}
+        {% endif %}
+{% endblock %}

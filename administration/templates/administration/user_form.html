@@ -1,0 +1,140 @@
+{# administration/templates/administration/user_form.html #}
+{% extends 'administration/base_admin.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% load i18n %}
+
+{% block admin_title %}{{ page_title }}{% endblock %}
+
+{% block page_header %}
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">{{ page_title }}</h1>
+        <a href="{{ back_url|default:"#" }}" class="text-sm text-yellow-600 hover:text-yellow-500 font-medium">← {% trans "Назад до списку" %}</a>
+    </div>
+{% endblock %}
+
+{% block admin_content %}
+    <form method="post" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
+        {% csrf_token %}
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-6">{{ form_title|default:"Форма" }}</h2>
+
+        <div class="space-y-6">
+            <fieldset>
+                <legend class="text-lg font-medium text-gray-900 dark:text-gray-200 mb-3">{% trans "Основна інформація" %}</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% for field in form.visible_fields %} {# Використовуємо visible_fields #}
+                        {% if field.name != 'groups' and field.name != 'user_permissions' %}
+                            <div class="form-field-group">
+                                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                                </label>
+                                {% render_field field class+=" form-input block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200" %}
+                                {% if field.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>{% endif %}
+                                {% if field.errors %}
+                                    <div class="mt-1 text-xs text-red-500 dark:text-red-400">
+                                        {% for error in field.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %} {# <--- ЗАКРИВАЄМО if field.errors #}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            {% if profile_form %}
+                <fieldset class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <legend class="text-lg font-medium text-gray-900 dark:text-gray-200 mb-3">{% trans "Профіль" %}</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for field in profile_form.visible_fields %} {# Використовуємо visible_fields #}
+                            <div class="form-field-group {% if field.name == 'avatar' %}md:col-span-2{% endif %}">
+                                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                                </label>
+                                {% if field.name == 'avatar' and profile_form.instance.avatar and profile_form.instance.avatar.url %}
+                                    <div class="mb-2">
+                                        <img src="{{ profile_form.instance.avatar.url }}" alt="Поточний аватар" class="h-20 w-20 rounded-full object-cover border border-gray-300 dark:border-gray-600">
+                                    </div>
+                                {% endif %}
+                                {% render_field field class+=" form-input block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-300 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" %}
+                                {% if field.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>{% endif %}
+                                {% if field.errors %}
+                                    <div class="mt-1 text-xs text-red-500 dark:text-red-400">
+                                        {% for error in field.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %} {# <--- ЗАКРИВАЄМО if field.errors #}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+            {% endif %}
+
+            <fieldset class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                <legend class="text-lg font-medium text-gray-900 dark:text-gray-200 mb-3">{% trans "Права та Групи" %}</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% for field in form.visible_fields %} {# Використовуємо visible_fields #}
+                        {% if field.name == 'groups' or field.name == 'user_permissions' %}
+                            <div class="form-field-group md:col-span-1">
+                                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                                </label>
+                                {% render_field field class+=" form-multiselect block w-full h-40 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200" %}
+                                {% if field.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>{% endif %}
+                                {% if field.errors %}
+                                    <div class="mt-1 text-xs text-red-500 dark:text-red-400">
+                                        {% for error in field.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %} {# <--- ЗАКРИВАЄМО if field.errors #}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+        {# Приховані поля форми, якщо є #}
+            {% for hidden_field in form.hidden_fields %}
+                {{ hidden_field }}
+            {% endfor %}
+            {% if profile_form %}
+                {% for hidden_field in profile_form.hidden_fields %}
+                    {{ hidden_field }}
+                {% endfor %}
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="mt-4 p-3 bg-red-50 dark:bg-red-800/30 text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-700">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% if profile_form and profile_form.non_field_errors %}
+                <div class="mt-4 p-3 bg-red-50 dark:bg-red-800/30 text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-700">
+                    <p class="font-medium">{% trans "Помилки профілю:" %}</p>
+                    {% for error in profile_form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-8 pt-5 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex justify-end gap-3">
+                <a href="{{ back_url|default:"#" }}" class="bg-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 py-2.5 px-5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    {% trans "Скасувати" %}
+                </a>
+                <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 py-2.5 px-5 rounded-lg shadow-sm text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    {{ button_text|default:_("Зберегти") }}
+                </button>
+            </div>
+        </div>
+    </form>
+{% endblock %}

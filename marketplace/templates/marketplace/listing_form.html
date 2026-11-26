@@ -1,0 +1,614 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+
+{% block title %}{{ form_title }} | ElectroHub{% endblock %}
+
+{% block extra_css %}
+    <style>
+        :root { --primary: #facc15; --accent: #eab308; }
+
+    /* Стили для превью изображений */
+        .image-gallery-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .gallery-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 0.375rem;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .gallery-item .actions {
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            padding: 0.25rem;
+        }
+        .gallery-item:hover .actions {
+            opacity: 1;
+        }
+        .gallery-item .actions button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        .gallery-item .actions .star-btn svg,
+        .gallery-item .actions .delete-btn svg {
+            width: 1rem; height: 1rem;
+        }
+        .gallery-item.is-main-indicator {
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 0 3px var(--accent);
+        }
+        .gallery-item .main-badge {
+            position: absolute;
+            top: 0.25rem;
+            left: 0.25rem;
+            background-color: var(--primary);
+            color: black;
+            font-size: 0.65rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-weight: bold;
+            z-index: 1;
+        }
+
+        .dropzone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            color: #6b7280;
+            cursor: pointer;
+            transition: border-color 0.2s ease-in-out;
+            min-height: 150px;
+        }
+        .dropzone.dragover {
+            border-color: var(--primary);
+            background-color: #fefce8;
+        }
+
+        .delete-formset-item-btn {
+            margin-left: 0.5rem;
+            color: #ef4444;
+            font-size: 0.875rem;
+        }
+        .delete-formset-item-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+{% endblock %}
+
+
+{% block content %}
+    <div class="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 text-center">
+                    {% if is_edit %}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-2 text-[var(--primary)] -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-2 text-[var(--primary)] -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {% endif %}
+                    {{ form_title }}
+                </h2>
+
+                {% if messages %}
+                    <div class="mb-6 space-y-2">
+                        {% for message in messages %}
+                            <div class="p-3 rounded-md text-sm
+                                        {% if message.tags == 'success' %} bg-green-100 border border-green-300 text-green-700
+                                        {% elif message.tags == 'error' %} bg-red-100 border border-red-300 text-red-700
+                                        {% else %} bg-blue-100 border border-blue-300 text-blue-700 {% endif %}"
+                                 role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{{ form_action_url }}" enctype="multipart/form-data" class="space-y-6" id="listing-form">
+                    {% csrf_token %}
+
+                {# --- Основная форма (поля КРОМЕ main_image) --- #}
+                    {% for field in form %}
+                        {% if field.name != 'main_image' %}
+                            {% if field.is_hidden %}
+                                {{ field }}
+                            {% else %}
+                                <div class="form-field-group field-{{ field.name }}">
+                                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                                    </label>
+                                    {% render_field field class+="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition duration-150 ease-in-out" %}
+                                    {% if field.help_text %}
+                                        <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="mt-1 text-xs text-red-500">
+                                            {% for error in field.errors %}<span>{{ error }}</span>{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if form.non_field_errors %}
+                        <div class="mt-1 text-sm text-red-500">
+                            {% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}
+                        </div>
+                    {% endif %}
+
+
+                {# --- Новый UI для изображений --- #}
+                    <fieldset class="mt-8 pt-6 border-t border-gray-200">
+                        <legend class="text-lg font-medium text-gray-900 mb-1">{% trans "Зображення оголошення" %}</legend>
+                        <p class="text-sm text-gray-500 mb-3">
+                            {% trans "Перше зображення буде головним. Перетягніть файли або натисніть щоб завантажити. Макс. 25 зображень." %}
+                        </p>
+
+                        <div id="image-dropzone" class="dropzone">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <p class="mb-1">{% trans "Перетягніть зображення сюди" %}</p>
+                            <p class="text-xs text-gray-400 mb-2">{% trans "або" %}</p>
+                            <button type="button" id="browse-image-button" class="py-1.5 px-3 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-md">
+                                {% trans "Обрати файли" %}
+                            </button>
+                        </div>
+                        <div id="image-gallery-preview" class="image-gallery-container"></div>
+                        <div id="image-errors" class="mt-2 text-xs text-red-500"></div>
+
+                        <div style="display: none;">
+                            <div class="form-field-group field-{{ form.main_image.name }}" {% if form.instance.main_image and form.instance.main_image.url %}data-current-url="{{ form.instance.main_image.url }}"{% endif %}>
+                                <label for="{{ form.main_image.id_for_label }}">{{ form.main_image.label }}</label>
+                                {{ form.main_image }}
+                                {% if form.main_image.errors %}<div class="mt-1 text-xs text-red-500">{% for error in form.main_image.errors %}<span>{{ error }}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                            {{ image_formset.management_form }}
+                            {% for img_form in image_formset %}
+                                <div class="image-formset-instance-django" id="django-form-{{ image_formset.prefix }}-{{ forloop.counter0 }}"
+                                     {% if img_form.instance.pk and img_form.instance.image and img_form.instance.image.url %}data-current-url="{{ img_form.instance.image.url }}"{% endif %}>
+                                    {{ img_form.id }}
+                                    {% for field in img_form.visible_fields %}
+                                        <div><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="mt-1 text-xs text-red-500">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}</div>
+                                    {% endfor %}
+                                    {% if img_form.DELETE and image_formset.can_delete %}<div>{{ img_form.DELETE.label_tag }} {{ img_form.DELETE }}</div>{% endif %}
+                                    {% for hidden_field in img_form.hidden_fields %}{% if hidden_field.name != 'id' %}{{ hidden_field }}{% endif %}{% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if image_formset.non_form_errors %}<div class="my-2 p-3 bg-red-100 text-red-700 border border-red-300 rounded">{% for error in image_formset.non_form_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                    </fieldset>
+
+                {# --- Формсет для ListingFeature (ОБНОВЛЕННЫЙ ДИЗАЙН) --- #}
+                    <fieldset class="mt-8 pt-6 border-t border-gray-200">
+                        <legend class="text-lg font-medium text-gray-900 mb-3">{% trans "Характеристики" %}</legend>
+                        {{ feature_formset.management_form }}
+                        {% if feature_formset.non_form_errors %}<div class="my-2 p-3 bg-red-100 text-red-700 border border-red-300 rounded">{% for error in feature_formset.non_form_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+
+                        <div id="feature-formset-container" class="space-y-4">
+                            {% for feat_form in feature_formset %}
+                                <div class="feature-form-instance relative bg-slate-50 border border-slate-200 p-4 pr-10 rounded-lg shadow-sm">
+                                    {% if feat_form.DELETE and feature_formset.can_delete %}
+                                        <div class="absolute top-3 right-3">
+                                            <label for="{{ feat_form.DELETE.id_for_label }}" class="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-100 transition-colors cursor-pointer" title="{% trans 'Видалити цю характеристику' %}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </label>
+                                            <div style="display:none;">{{ feat_form.DELETE }}</div>
+                                        </div>
+                                    {% endif %}
+
+                                    {{ feat_form.id }}
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                                        <div class="form-field-group">
+                                            <label for="{{ feat_form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ feat_form.name.label }}{% if feat_form.name.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                                            {% render_field feat_form.name class+="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent" placeholder="Напр. Колір" %}
+                                            {% if feat_form.name.errors %}<div class="mt-1 text-xs text-red-500">{% for error in feat_form.name.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                                        </div>
+                                        <div class="form-field-group">
+                                            <label for="{{ feat_form.value.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ feat_form.value.label }}{% if feat_form.value.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                                            {% render_field feat_form.value class+="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent" placeholder="Напр. Чорний" %}
+                                            {% if feat_form.value.errors %}<div class="mt-1 text-xs text-red-500">{% for error in feat_form.value.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                                        </div>
+                                        {% if feat_form.icon_svg %}
+                                            <div class="form-field-group md:col-span-2">
+                                                <label for="{{ feat_form.icon_svg.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ feat_form.icon_svg.label }}{% if feat_form.icon_svg.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                                                {% render_field feat_form.icon_svg class+="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent" rows="2" placeholder="<svg>...</svg>" %}
+                                                {% if feat_form.icon_svg.errors %}<div class="mt-1 text-xs text-red-500">{% for error in feat_form.icon_svg.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="hidden">
+                                        {% for hidden_field in feat_form.hidden_fields %}{% if hidden_field.name != 'id' %}{{ hidden_field }}{% endif %}{% endfor %}
+                                    </div>
+                                    {% if feat_form.non_field_errors %}<div class="mt-2 text-xs text-red-500 md:col-span-12">{% for error in feat_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="add-listing-feature-form" class="mt-4 py-2 px-3 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-md inline-flex items-center transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                            {% trans "Додати характеристику" %}
+                        </button>
+                    </fieldset>
+
+                    <div class="pt-6">
+                        <button type="submit" class="w-full flex justify-center py-3 px-6 border border-transparent rounded-xl shadow-lg text-lg font-semibold text-white bg-[var(--primary)] hover:bg-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition duration-150 ease-in-out">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                            {{ button_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{# --- Шаблоны для JavaScript --- #}
+    <script type="text/template" id="empty-listing-image-form-template">
+        <div class="image-formset-instance-django" id="django-form-{{ image_formset.prefix }}-__prefix__">
+            {{ image_formset.empty_form.id }}
+            {% for field in image_formset.empty_form.visible_fields %}
+                <div><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+            {% endfor %}
+            {% if image_formset.empty_form.DELETE and image_formset.can_delete_extra %}
+                <div><label for="{{ image_formset.empty_form.DELETE.id_for_label }}">{% trans "Видалити це зображення" %}</label>{{ image_formset.empty_form.DELETE }}</div>
+            {% endif %}
+            {% for hidden_field in image_formset.empty_form.hidden_fields %}{% if hidden_field.name != 'id' %}{{ hidden_field }}{% endif %}{% endfor %}
+        </div>
+    </script>
+
+    <script type="text/template" id="empty-listing-feature-form-template">
+        <div class="feature-form-instance relative bg-slate-50 border border-slate-200 p-4 pr-10 rounded-lg shadow-sm">
+            {% if feature_formset.empty_form.DELETE and feature_formset.can_delete_extra %}
+                <div class="absolute top-3 right-3">
+                    <label for="id_{{ feature_formset.prefix }}-__FORM_INDEX_PLACEHOLDER__-DELETE" class="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-100 transition-colors cursor-pointer" title="{% trans 'Видалити цю характеристику' %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </label>
+                {# name для DELETE будет стандартным __prefix__, id мы задаем явно #}
+                    <div style="display:none;">{% render_field feature_formset.empty_form.DELETE id="id_feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-DELETE" name="feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-DELETE" %}</div>
+                </div>
+            {% endif %}
+
+        {# name для ID будет стандартным __prefix__, id мы задаем явно #}
+            {% render_field feature_formset.empty_form.id id="id_feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-id" name="feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-id" %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                <div class="form-field-group">
+                    <label for="id_{{ feature_formset.prefix }}-__FORM_INDEX_PLACEHOLDER__-name" class="block text-sm font-medium text-gray-700 mb-1">{{ feature_formset.empty_form.name.label }}{% if feature_formset.empty_form.name.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                    {% render_field feature_formset.empty_form.name class+="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent" placeholder="Напр. Колір" id="id_feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-name" name="feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-name" %}
+                </div>
+                <div class="form-field-group">
+                    <label for="id_{{ feature_formset.prefix }}-__FORM_INDEX_PLACEHOLDER__-value" class="block text-sm font-medium text-gray-700 mb-1">{{ feature_formset.empty_form.value.label }}{% if feature_formset.empty_form.value.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                    {% render_field feature_formset.empty_form.value class+="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent" placeholder="Напр. Чорний" id="id_feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-value" name="feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-value" %}
+                </div>
+                {% if feature_formset.empty_form.icon_svg %}
+                    <div class="form-field-group md:col-span-2">
+                        <label for="id_{{ feature_formset.prefix }}-__FORM_INDEX_PLACEHOLDER__-icon_svg" class="block text-sm font-medium text-gray-700 mb-1">{{ feature_formset.empty_form.icon_svg.label }}{% if feature_formset.empty_form.icon_svg.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                        {% render_field feature_formset.empty_form.icon_svg class+="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent" rows="2" placeholder="<svg>...</svg>" id="id_feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-icon_svg" name="feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-icon_svg" %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="hidden">
+                {% for hidden_field in feature_formset.empty_form.hidden_fields %}
+                    {% if hidden_field.name != 'id' %}
+                        {% render_field hidden_field id="id_feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-"|add:hidden_field.html_name name="feature_formset_placeholder_prefix-__FORM_INDEX_PLACEHOLDER__-"|add:hidden_field.html_name %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </script>
+
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    // --- Configuration ---
+            const MAX_FILES = 25;
+            const IMAGE_FORMSET_PREFIX = '{{ image_formset.prefix }}'; // Используется если image_formset существует
+
+    // --- DOM Elements (Image Gallery) ---
+            const listingForm = document.getElementById('listing-form');
+            const dropzone = document.getElementById('image-dropzone');
+            const galleryPreview = document.getElementById('image-gallery-preview');
+            const browseButton = document.getElementById('browse-image-button');
+            const imageErrorsDiv = document.getElementById('image-errors');
+            const djangoMainImageInput = document.getElementById('{{ form.main_image.id_for_label }}');
+            const djangoMainImageClearCheckbox = document.getElementById('{{ form.main_image.id_for_label }}-clear');
+
+    // Эти элементы могут отсутствовать, если на странице нет формсета изображений
+            const imageFormsetManagementTotal = document.querySelector(`input[name="${IMAGE_FORMSET_PREFIX}-TOTAL_FORMS"]`);
+            const imageFormsetContainer = imageFormsetManagementTotal?.closest('div[style="display: none;"]');
+            const emptyImageFormTemplateEl = document.getElementById('empty-listing-image-form-template');
+            const emptyImageFormTemplate = emptyImageFormTemplateEl ? emptyImageFormTemplateEl.innerHTML : null;
+
+
+    // --- State (Image Gallery) ---
+            let galleryItems = [];
+            let clientFileIdCounter = 0;
+
+    // --- Helper Functions (Image Gallery) ---
+            function generateClientFileId() { return `clientfile-${clientFileIdCounter++}-${Date.now()}`; }
+            function displayError(message) { if(imageErrorsDiv) { imageErrorsDiv.textContent = message; setTimeout(() => { if(imageErrorsDiv) imageErrorsDiv.textContent = ''; }, 5000); } }
+            function createGalleryDOMItem(item) {
+                const div = document.createElement('div');
+                div.className = 'gallery-item group';
+                div.dataset.id = item.id;
+                if (item.isMain) {
+                    div.classList.add('is-main-indicator');
+                    const badge = document.createElement('span');
+                    badge.className = 'main-badge';
+                    badge.textContent = '{% trans "Головне" %}';
+                    div.appendChild(badge);
+                }
+                const img = document.createElement('img');
+                img.src = item.url; img.alt = item.name; div.appendChild(img);
+                const actionsDiv = document.createElement('div'); actionsDiv.className = 'actions';
+                const starBtn = document.createElement('button'); starBtn.type = 'button'; starBtn.className = 'star-btn'; starBtn.title = '{% trans "Зробити головним" %}';
+                starBtn.innerHTML = item.isMain
+                    ? `<svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>`
+                    : `<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.612.049.868.85.437 1.253l-3.994 3.592a.563.563 0 00-.162.505l1.504 5.437c.114.413-.342.796-.71.53l-4.796-3.222a.563.563 0 00-.652 0l-4.796 3.222c-.368.265-.823-.117-.71-.53l1.504-5.437a.563.563 0 00-.162.505L1.71 10.641c-.43-.399-.176-1.204.438-1.253l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>`;
+                starBtn.addEventListener('click', () => setMainImage(item.id));
+                const deleteBtn = document.createElement('button'); deleteBtn.type = 'button'; deleteBtn.className = 'delete-btn'; deleteBtn.title = '{% trans "Видалити" %}';
+                deleteBtn.innerHTML = `<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c1.153 0 2.243.093 3.31.266m2.087 0l.247.021m-2.316.004a51.026 51.026 0 01-3.115.307m12.026 0c.19.029.376.062.558.097M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c1.153 0 2.243.093 3.31.266m2.087 0l.247.021m-2.316.004a51.026 51.026 0 01-3.115.307m12.026 0c.19.029.376.062.558.097" /></svg>`;
+                deleteBtn.addEventListener('click', () => removeImage(item.id));
+                actionsDiv.appendChild(starBtn); actionsDiv.appendChild(deleteBtn); div.appendChild(actionsDiv); return div;
+            }
+            function renderGallery() {
+                if(galleryPreview) galleryPreview.innerHTML = ''; else return;
+                galleryItems.forEach(item => { galleryPreview.appendChild(createGalleryDOMItem(item)); });
+            }
+            function addFilesToGallery(files) {
+                if (galleryItems.length + files.length > MAX_FILES) { displayError(`{% trans "Можна завантажити максимум" %} ${MAX_FILES} {% trans "зображень." %}`); return; }
+                Array.from(files).forEach(file => {
+                    if (!file.type.startsWith('image/')) { displayError(`{% trans "Файл" %} ${file.name} {% trans "не є зображенням." %}`); return; }
+                    if (file.size > 5 * 1024 * 1024) { displayError(`{% trans "Файл" %} ${file.name} {% trans "занадто великий (макс. 5MB)." %}`); return; }
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const newItem = { id: generateClientFileId(), file: file, url: e.target.result, name: file.name, isMain: galleryItems.length === 0, isNew: true };
+                        if (newItem.isMain) { galleryItems.forEach(gi => gi.isMain = false); }
+                        galleryItems.push(newItem); sortGalleryItems(); renderGallery();
+                    }; reader.readAsDataURL(file);
+                });
+            }
+            function sortGalleryItems() { galleryItems.sort((a, b) => { if (a.isMain) return -1; if (b.isMain) return 1; return 0; }); }
+            function setMainImage(itemId) { galleryItems.forEach(item => { item.isMain = (item.id === itemId); }); sortGalleryItems(); renderGallery(); }
+            function removeImage(itemId) {
+                const itemToRemove = galleryItems.find(item => item.id === itemId); if (!itemToRemove) return;
+                if (itemToRemove.url.startsWith('blob:')) { URL.revokeObjectURL(itemToRemove.url); }
+                galleryItems = galleryItems.filter(item => item.id !== itemId);
+                if (itemToRemove.isMain && galleryItems.length > 0) { galleryItems[0].isMain = true; }
+                sortGalleryItems(); renderGallery();
+            }
+            function loadInitialImages() {
+                if(!djangoMainImageInput && !imageFormsetManagementTotal) return; // Если нет ни главного, ни формсета, выходим
+
+                if(djangoMainImageInput) {
+                    const mainImageVal = djangoMainImageInput.value;
+                    const mainImageCurrentUrl = djangoMainImageInput.dataset.currentUrl;
+                    if (mainImageCurrentUrl && mainImageVal) {
+                        galleryItems.push({ id: `existing-main-${mainImageVal.split('/').pop()}`, url: mainImageCurrentUrl, name: mainImageVal.split('/').pop(), isMain: true, isNew: false, originalPk: mainImageVal });
+                    }
+                }
+
+                const initialFormsInput = document.querySelector(`input[name="${IMAGE_FORMSET_PREFIX}-INITIAL_FORMS"]`);
+                if(!initialFormsInput) { // Если нет INITIAL_FORMS, но есть галерея (например, только main_image)
+                    sortGalleryItems();
+                    renderGallery();
+                    return;
+                }
+                const initialForms = parseInt(initialFormsInput.value);
+
+                for (let i = 0; i < initialForms; i++) {
+                    const idInput = document.getElementById(`id_${IMAGE_FORMSET_PREFIX}-${i}-id`);
+                    const formsetFormDiv = idInput ? idInput.closest('.image-formset-instance-django') : null;
+                    const currentImageUrl = formsetFormDiv ? formsetFormDiv.dataset.currentUrl : null;
+                    const imagePK = idInput ? idInput.value : null;
+                    if (imagePK && currentImageUrl) {
+                        galleryItems.push({ id: `existing-formset-${imagePK}`, url: currentImageUrl, name: currentImageUrl.split('/').pop(), isMain: false, isNew: false, originalPk: imagePK, originalFormsetIndex: i });
+                    }
+                }
+                sortGalleryItems(); renderGallery();
+            }
+
+    // --- Event Listeners (Image Gallery) ---
+            if (dropzone && browseButton) {
+                dropzone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); });
+                dropzone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); });
+                dropzone.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); addFilesToGallery(e.dataTransfer.files); });
+                browseButton.addEventListener('click', () => {
+                    const input = document.createElement('input'); input.type = 'file'; input.multiple = true; input.accept = 'image/*';
+                    input.onchange = (e) => addFilesToGallery(e.target.files); input.click();
+                });
+            }
+
+            {% if form.instance.pk %}
+                {% if form.main_image and form.instance.main_image and form.instance.main_image.url %} {# Проверка что form.main_image существует #}
+                    if(djangoMainImageInput) djangoMainImageInput.dataset.currentUrl = "{{ form.instance.main_image.url }}";
+                {% endif %}
+                {% if image_formset %} {# Проверка что image_formset существует #}
+                    {% for img_form in image_formset %}
+                        {% if img_form.instance.pk and img_form.instance.image and img_form.instance.image.url %}
+                            const formsetDiv{{forloop.counter0}} = document.getElementById('django-form-{{ image_formset.prefix }}-{{ forloop.counter0 }}');
+                            if(formsetDiv{{forloop.counter0}}) formsetDiv{{forloop.counter0}}.dataset.currentUrl = "{{ img_form.instance.image.url }}";
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                if (typeof loadInitialImages === "function") loadInitialImages();
+            {% endif %}
+
+    // --- Sync with Django Form on Submit (Image Gallery) ---
+            if (listingForm) {
+                listingForm.addEventListener('submit', function(e) {
+                    if (imageFormsetManagementTotal && imageFormsetContainer) {
+                        let formsetIdx = 0;
+                        let newMainImageFile = null;
+                        let clearOriginalMainImage = true;
+                        const originalMainImagePk = (djangoMainImageInput && djangoMainImageInput.dataset.currentUrl && djangoMainImageInput.value) ? djangoMainImageInput.value : null;
+
+                        const mainGalleryItem = galleryItems.find(item => item.isMain);
+                        if (mainGalleryItem) {
+                            if (mainGalleryItem.isNew && mainGalleryItem.file) { newMainImageFile = mainGalleryItem.file; clearOriginalMainImage = true; }
+                            else if (!mainGalleryItem.isNew && mainGalleryItem.originalPk === originalMainImagePk) { clearOriginalMainImage = false; }
+                            else if (!mainGalleryItem.isNew && djangoMainImageClearCheckbox) { djangoMainImageClearCheckbox.checked = true; }
+                        } else if (djangoMainImageClearCheckbox) { djangoMainImageClearCheckbox.checked = true; }
+
+                        if (newMainImageFile && djangoMainImageInput) {
+                            const dataTransfer = new DataTransfer(); dataTransfer.items.add(newMainImageFile);
+                            djangoMainImageInput.files = dataTransfer.files;
+                            if (djangoMainImageClearCheckbox) djangoMainImageClearCheckbox.checked = false;
+                        } else if (clearOriginalMainImage && djangoMainImageClearCheckbox) { djangoMainImageClearCheckbox.checked = true; }
+
+                        const initialFormsInput = document.querySelector(`input[name="${IMAGE_FORMSET_PREFIX}-INITIAL_FORMS"]`);
+                        if (!initialFormsInput) return;
+                        const initialFormsCount = parseInt(initialFormsInput.value);
+
+                        for (let i = 0; i < initialFormsCount; i++) {
+                            const deleteCheckbox = document.getElementById(`id_${IMAGE_FORMSET_PREFIX}-${i}-DELETE`);
+                            if (deleteCheckbox) deleteCheckbox.checked = true;
+                        }
+
+                        galleryItems.forEach(item => {
+                            if (item.isMain && item.isNew) return;
+                            if (item.isMain && !item.isNew && item.originalPk === originalMainImagePk) return;
+                            if (!item.isNew && typeof item.originalFormsetIndex !== 'undefined') {
+                                const deleteCheckbox = document.getElementById(`id_${IMAGE_FORMSET_PREFIX}-${item.originalFormsetIndex}-DELETE`);
+                                if (deleteCheckbox) deleteCheckbox.checked = false;
+                                if(item.isMain) return;
+                            } else if (item.isNew && item.file && emptyImageFormTemplate) {
+                                let formHtml = emptyImageFormTemplate.replace(/__prefix__/g, formsetIdx);
+                                const tempDiv = document.createElement('div'); tempDiv.innerHTML = formHtml;
+                                const newFormDiv = tempDiv.firstElementChild;
+                                if(imageFormsetContainer) imageFormsetContainer.appendChild(newFormDiv);
+                                const fileInput = newFormDiv.querySelector(`input[type="file"][name$="-image"]`);
+                                const dt = new DataTransfer(); dt.items.add(item.file); fileInput.files = dt.files;
+                                formsetIdx++;
+                            }
+                            if (item.isMain && !item.isNew && typeof item.originalFormsetIndex !== 'undefined') {
+                                const deleteCheckbox = document.getElementById(`id_${IMAGE_FORMSET_PREFIX}-${item.originalFormsetIndex}-DELETE`);
+                                if (deleteCheckbox) deleteCheckbox.checked = true;
+                            }
+                        });
+
+                        let currentTotal = 0;
+                        for (let i = 0; i < initialFormsCount; i++) {
+                            const deleteCheckbox = document.getElementById(`id_${IMAGE_FORMSET_PREFIX}-${i}-DELETE`);
+                            if (deleteCheckbox && !deleteCheckbox.checked) { currentTotal++; }
+                        }
+                        currentTotal += formsetIdx;
+                        imageFormsetManagementTotal.value = currentTotal;
+                    } else if (djangoMainImageInput && galleryItems.length > 0) { // Только main_image, без формсета
+                        let newMainImageFile = null;
+                        const mainGalleryItem = galleryItems.find(item => item.isMain);
+                        if (mainGalleryItem && mainGalleryItem.isNew && mainGalleryItem.file) {
+                            newMainImageFile = mainGalleryItem.file;
+                            const dataTransfer = new DataTransfer(); dataTransfer.items.add(newMainImageFile);
+                            djangoMainImageInput.files = dataTransfer.files;
+                            if (djangoMainImageClearCheckbox) djangoMainImageClearCheckbox.checked = false;
+                        } else if (!mainGalleryItem && djangoMainImageClearCheckbox) { // Все удалены или не было
+                            djangoMainImageClearCheckbox.checked = true;
+                        } else if (mainGalleryItem && !mainGalleryItem.isNew && djangoMainImageClearCheckbox){
+                    // Если это существующее главное изображение, но оно не выбрано как новое,
+                    // и если оно должно быть удалено (например, пользователь нажал "очистить" в галерее)
+                    // то djangoMainImageClearCheckbox должен быть установлен.
+                    // Логика удаления для main image должна быть более явной в galleryItems.
+                    // Пока предполагаем, что если mainGalleryItem существует, но не new, то оно остается,
+                    // если только не было команды его очистить.
+                    // Если mainGalleryItem - существующее, то ничего не делаем с файлом, если оно не отмечено к удалению.
+                    // Если оно было удалено из галереи, то clearOriginalMainImage установится в true (предполагая, что эта переменная есть и используется)
+                        }
+                    }
+                });
+            }
+
+
+    // --- Initialize AddInlineForm (для характеристик и других формсетов) ---
+            function initializeAddInlineForm(options) {
+                const addButton = document.getElementById(options.addButtonId);
+                const container = document.getElementById(options.containerId);
+                const templateElement = document.getElementById(options.templateId);
+                const formsetPrefix = options.formsetPrefix;
+
+                if (!addButton || !container || !templateElement) {
+                    return;
+                }
+                const templateHtml = templateElement.innerHTML;
+
+                addButton.addEventListener('click', function() {
+                    const totalFormsInput = document.querySelector(`input[name="${formsetPrefix}-TOTAL_FORMS"]`);
+                    if (!totalFormsInput) {
+                        console.error(`TOTAL_FORMS input not found for prefix ${formsetPrefix}`);
+                        return;
+                    }
+                    let formIdx = parseInt(totalFormsInput.value);
+
+            // Плейсхолдеры для замены
+                    const idPrefixPlaceholder = "id_feature_formset_placeholder_prefix"; // То, что в шаблоне у id
+                    const namePrefixPlaceholder = "feature_formset_placeholder_prefix"; // То, что в шаблоне у name
+                    const indexPlaceholder = "__FORM_INDEX_PLACEHOLDER__";
+
+                    let newFormHtml = templateHtml
+                        .replace(new RegExp(idPrefixPlaceholder, 'g'), `id_${formsetPrefix}`)
+                        .replace(new RegExp(namePrefixPlaceholder, 'g'), formsetPrefix)
+                        .replace(new RegExp(indexPlaceholder, 'g'), formIdx);
+
+            // Также заменяем стандартный Django __prefix__, если он где-то остался
+            // (например, если render_field сам его вставил в какой-то атрибут, который мы не переопределили)
+                    newFormHtml = newFormHtml.replace(/__prefix__/g, formIdx);
+
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = newFormHtml.trim();
+
+                    container.appendChild(tempDiv.firstElementChild);
+                    totalFormsInput.value = formIdx + 1;
+                });
+            }
+
+    // Инициализация формсета характеристик, если он есть на странице
+            if (document.getElementById('add-listing-feature-form')) {
+                initializeAddInlineForm({
+                    addButtonId: 'add-listing-feature-form',
+                    containerId: 'feature-formset-container',
+                    templateId: 'empty-listing-feature-form-template',
+                    formsetPrefix: '{{ feature_formset.prefix }}',
+                });
+            }
+
+        });
+    </script>
+{% endblock %}

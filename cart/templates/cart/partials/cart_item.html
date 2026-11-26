@@ -1,0 +1,127 @@
+{# cart/partials/cart_item.html #}
+{% load static %}
+{% load custom_filters %} {# Загрузи, если используешь здесь кастомные фильтры #}
+
+{# -------------------------------------------------------------------------- #}
+{# Очікуваний Контекст:                                                        #}
+{#   - 'item' (dict): Словник, що представляє один елемент кошика.            #}
+{#       - 'product' (Product object): Об'єкт моделі Product.                 #}
+{#       - 'quantity' (int): Поточна кількість цього товару в кошику.        #}
+{#       - 'total_price' (Decimal/float): Загальна вартість для цієї позиції.#}
+{# -------------------------------------------------------------------------- #}
+
+{% if item and item.product %} {# Перевірка наявності даних #}
+    <li class="flex py-6 sm:py-8 border-b border-gray-200 last:border-b-0" id="cart-item-{{ item.product.id }}"> {# Унікальний ID для всієї строки #}
+
+    {# --- Зображення Товару --- #}
+        <div class="flex-shrink-0">
+        {# Переконайся, що у моделі Product є метод get_thumbnail або відповідне поле #}
+            <img src="{{ item.product.get_thumbnail }}"
+                 alt="{{ item.product.name }}"
+                 class="h-24 w-24 rounded-lg border border-gray-200 object-cover object-center sm:h-32 sm:w-32"
+                 onerror="this.onerror=null;"> {# Резервне зображення #}
+        </div>
+
+    {# --- Інформація про Товар та Керування --- #}
+        <div class="ml-4 flex flex-1 flex-col justify-between sm:ml-6">
+        {# Верхня частина: Назва, Ціна за одиницю, Кнопка Видалення #}
+            <div class="relative pr-9 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:pr-0">
+
+            {# Блок з назвою та ціною за одиницю #}
+                <div>
+                    <div class="flex justify-between">
+                        <h3 class="text-base font-medium text-gray-800 hover:text-yellow-600">
+                        {# Переконайся, що у моделі Product є метод get_absolute_url #}
+                            <a href="{{ item.product.get_absolute_url }}">{{ item.product.name }}</a>
+                        </h3>
+                    </div>
+                {# Переконайся, що у моделі Product є метод get_display_price #}
+                    <p class="mt-1 text-sm font-medium text-gray-900">
+                        {{ item.product.get_display_price }} ₴ / шт.
+                    </p>
+                {# Опціонально: Короткий опис або характеристики #}
+                {# <p class="mt-1 text-xs text-gray-500 line-clamp-1">{{ item.product.short_description|default:"" }}</p> #}
+                </div>
+
+            {# Блок з керуванням кількістю та ціною #}
+                <div class="mt-4 sm:mt-0 sm:pr-9">
+                {# Керування кількістю (input number або кнопки +/-) #}
+                    <div class="flex items-center border border-gray-200 rounded-md w-fit ml-auto sm:ml-0">
+                    {# --- Кнопка "-" (Зменшити) --- #}
+                        <button type="button"
+                                hx-post="{% url 'cart:update_cart' item.product.id 'decrement' %}" {# URL для зменшення #}
+                                hx-target="#cart-item-{{ item.product.id }}" {# Ціль - вся ця строка <li> #}
+                                hx-swap="outerHTML" {# Замінити всю строку відповіддю від сервера #}
+                            {# hx-headers не потрібен, якщо є глобальний CSRF скрипт #}
+                                aria-label="Зменшити кількість {{ item.product.name }}"
+                                class="px-2 py-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-l-md focus:outline-none focus:ring-1 focus:ring-yellow-400 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                                {% if item.quantity <= 1 %}disabled title="Мінімальна кількість досягнута"{% endif %}> {# Вимкнено, якщо кількість 1 або менше #}
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 12H6" /></svg>
+                        </button>
+
+                    {# --- Поточна кількість --- #}
+                        <span class="px-3 py-1 text-sm font-medium text-gray-700 border-x border-gray-200 tabular-nums w-10 text-center"> {# Додана ширина та центрування #}
+                            {{ item.quantity }}
+                        </span>
+
+                    {# --- Кнопка "+" (Збільшити) --- #}
+                        <button type="button"
+                                hx-post="{% url 'cart:update_cart' item.product.id 'increment' %}" {# URL для збільшення #}
+                                hx-target="#cart-item-{{ item.product.id }}" {# Ціль - вся ця строка <li> #}
+                                hx-swap="outerHTML" {# Замінити всю строку відповіддю від сервера #}
+                            {# hx-headers не потрібен, якщо є глобальний CSRF скрипт #}
+                                aria-label="Збільшити кількість {{ item.product.name }}"
+                                class="px-2 py-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-r-md focus:outline-none focus:ring-1 focus:ring-yellow-400 transition-colors duration-150">
+                            {# Можна додати disabled, якщо є ліміт на кількість #}
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" /></svg>
+                        </button>
+                    </div>
+
+                {# --- Загальна ціна за цю позицію --- #}
+                    <p class="mt-2 text-right text-base font-semibold text-gray-900">
+                        {{ item.total_price|floatformat:"0" }} ₴
+                    </p>
+
+                 {# --- Кнопка видалення товару (зверху справа) --- #}
+                    <div class="absolute top-0 right-0">
+                        <button type="button"
+                                hx-post="{% url 'cart:update_cart' item.product.id 'remove' %}" {# URL для видалення #}
+                                hx-target="#cart-item-{{ item.product.id }}" {# Ціль - вся ця строка <li> #}
+                                hx-swap="outerHTML" {# Замінити всю строку відповіддю (порожньою) #}
+                                hx-confirm="Ви впевнені, що хочете видалити {{ item.product.name }} з кошика?" {# Підтвердження дії #}
+                            {# hx-headers не потрібен, якщо є глобальний CSRF скрипт #}
+                                title="Видалити {{ item.product.name }} з кошика"
+                                class="-m-2 inline-flex p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors duration-150">
+                            <span class="sr-only">Видалити</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" /></svg>
+                        </button>
+                    </div>
+                </div> {# Кінець блоку керування кількістю #}
+            </div> {# Кінець grid #}
+
+        {# Нижня частина: Повідомлення про наявність #}
+            <div class="mt-4 flex space-x-2 text-sm text-gray-700">
+                {% if item.product.in_stock %}
+                    <svg class="h-5 w-5 flex-shrink-0 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                    <span>В наявності</span>
+                {% else %}
+                    <svg class="h-5 w-5 flex-shrink-0 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.257 3.099c.636-1.362 2.85-1.362 3.486 0l5.58 11.926A2 2 0 0115.36 18H4.64a2 2 0 01-1.963-2.975l5.58-11.926zM10 14a1 1 0 110-2 1 1 0 010 2zm0-5a1 1 0 011 1v2a1 1 0 11-2 0V9a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                    <span>Немає в наявності</span> {# Або "Під замовлення", якщо є така логіка #}
+                {% endif %}
+            </div>
+        </div> {# Кінець flex-1 #}
+    </li>
+{% else %}
+{# --- Блок для випадку, коли 'item' або 'item.product' відсутні --- #}
+{# Це може статися, якщо у view виникла помилка при формуванні контексту #}
+    <li class="flex py-6 sm:py-8 border-b border-gray-200 last:border-b-0">
+        <div class="flex-shrink-0">
+            <div class="h-24 w-24 rounded-lg border border-gray-200 bg-gray-100 flex items-center justify-center sm:h-32 sm:w-32">
+                <svg class="h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+            </div>
+        </div>
+        <div class="ml-4 flex flex-1 flex-col justify-center sm:ml-6">
+            <p class="text-sm text-red-600">Помилка завантаження даних для цього товару.</p>
+        </div>
+    </li>
+{% endif %} {# Кінець перевірки if item and item.product #}

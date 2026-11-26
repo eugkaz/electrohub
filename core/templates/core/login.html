@@ -1,0 +1,118 @@
+{% extends 'core/main.html' %}
+{% load i18n %}
+{% load static %}
+{# {% load custom_filters %} - Уберите, если не используется на этой странице #}
+
+{% block title %}{% trans "Вхід до Акаунту" %} - ElectroHub{% endblock %}
+
+{% block content %}
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-100">
+        <div class="w-full max-w-md p-4">
+            <div class="bg-white p-8 sm:p-10 rounded-xl shadow-xl border border-gray-200">
+
+                <div class="text-center mb-10">
+                    <a href="{% url 'frontpage' %}" class="inline-block">
+                    </a>
+                    <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                        {% trans "Вхід до акаунту" %}
+                    </h2>
+                </div>
+
+                <form method="post" action="{% url 'login' %}" class="space-y-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% firstof next request.GET.next '' %}">
+
+                    {% with base_input_classes="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none transition duration-150 ease-in-out shadow-sm text-sm placeholder-gray-400 text-gray-900" error_input_classes="border-red-500 focus:ring-red-500 focus:border-red-500" %}
+                        <div>
+                            <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">{% trans "Логін або Email" %}</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                                </div>
+                                <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" autocomplete="username" required
+                                       class="{{ base_input_classes }}{% if form.username.errors %} {{ error_input_classes }}{% endif %} pl-11"
+                                       placeholder="{% trans 'Ваш логін або email' %}">
+                            </div>
+                            {% if form.username.errors %}
+                                <p class="text-red-600 text-xs mt-1.5">{% for error in form.username.errors %}{{ error|escape }}{% endfor %}</p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700">{% trans "Пароль" %}</label>
+                                <a href="{% url 'password_reset' %}" class="text-xs text-yellow-600 hover:text-yellow-500 hover:underline">{% trans "Забули пароль?" %}</a>
+                            </div>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clip-rule="evenodd" /></svg>
+                                </div>
+                                <input type="password" name="{{ form.password.name }}" id="{{ form.password.id_for_label }}" autocomplete="current-password" required
+                                       class="{{ base_input_classes }}{% if form.password.errors %} {{ error_input_classes }}{% endif %} pl-11"
+                                       placeholder="••••••••">
+                            </div>
+                            {% if form.password.errors %}
+                                <p class="text-red-600 text-xs mt-1.5">{% for error in form.password.errors %}{{ error|escape }}{% endfor %}</p>
+                            {% endif %}
+                        </div>
+                    {% endwith %} {# Закрытие with для классов инпутов #}
+
+                    {% if form.non_field_errors or messages %}
+                        <div class="space-y-3 pt-1">
+                            {% if form.non_field_errors %}
+                                <div class="flex items-start p-4 bg-red-50 border-l-4 border-red-500 rounded-md">
+                                    <svg class="flex-shrink-0 h-5 w-5 text-red-500 mr-2.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                                    <div>{% for error in form.non_field_errors %} <p class="text-sm font-medium text-red-700">{{ error|escape }}</p> {% endfor %}</div>
+                                </div>
+                            {% endif %}
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="flex items-start p-4 rounded-md border-l-4
+                                                {% if message.tags == 'success' %} bg-green-50 text-green-800 border-green-500
+                                                {% elif message.tags == 'error' %} bg-red-50 text-red-800 border-red-500
+                                                {% elif message.tags == 'warning' %} bg-yellow-50 text-yellow-800 border-yellow-500
+                                                {% else %} bg-blue-50 text-blue-800 border-blue-500 {% endif %}" role="alert">
+                                        <svg class="flex-shrink-0 h-5 w-5 mr-2.5
+                                                    {% if message.tags == 'success' %} text-green-500
+                                                    {% elif message.tags == 'error' %} text-red-500
+                                                    {% elif message.tags == 'warning' %} text-yellow-500
+                                                    {% else %} text-blue-500 {% endif %}"
+                                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 011 1v3a1 1 0 11-2 0V7a1 1 0 011-1zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span class="text-sm font-medium">{{ message }}</span>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <div class="pt-4">
+                        <button type="submit" class="w-full py-3 px-5 rounded-lg text-base font-semibold text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-4 focus:ring-yellow-300 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                            {% trans "Увійти" %}
+                        </button>
+                    </div>
+                </form>
+
+                <div class="relative my-8">
+                    <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+
+                </div>
+
+                <div class="mt-10 text-center">
+                    <p class="text-sm text-gray-600">
+                        {% trans "Не маєте акаунту?" %}
+                        <a href="{% url 'signup' %}" class="font-semibold text-yellow-600 hover:text-yellow-500 hover:underline">
+                            {% trans "Зареєструватися" %}
+                        </a>
+                    </p>
+                </div>
+            </div>
+            <p class="mt-10 text-center text-xs text-gray-500">
+                © {% now "Y" %} ElectroHub. {% trans "Всі права захищено." %}
+            </p>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+{% load custom_filters %}
+
+<div class="group bg-white rounded-lg shadow-md border border-gray-200/75 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg h-full {% if listing.status == 'sold' %}opacity-75 grayscale-[30%]{% endif %}">
+    <div class="relative listing-card-swiper-container aspect-[16/10] bg-gray-100 overflow-hidden">
+        {% with main_image=listing.main_image additional_images=listing.additional_images.all %}
+            {% if main_image or additional_images %}
+                {% with total_images_calc=additional_images.count|add:main_image|yesno:"1,0" %} {# Используем другое имя переменной #}
+                    <div class="swiper listing-card-swiper h-full" data-listing-id="{{ listing.pk }}">
+                        <div class="swiper-wrapper">
+                            {% if main_image %}
+                                <div class="swiper-slide">
+                                    <a href="{% url 'listing_detail' listing.pk %}" class="block h-full w-full">
+                                        <img src="{{ main_image.url }}" alt="{{ listing.title }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy">
+                                    </a>
+                                </div>
+                            {% endif %}
+                            {% for image in additional_images %}
+                                <div class="swiper-slide">
+                                    <a href="{% url 'listing_detail' listing.pk %}" class="block h-full w-full">
+                                        <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:listing.title }} {% if main_image %}#{{ forloop.counter|add:1 }}{% else %}#{{ forloop.counter }}{% endif %}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy">
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if total_images_calc|to_int > 1 %} {# Проверяем, что число > 1 #}
+                            <div class="swiper-pagination !bottom-2"></div>
+                        {% endif %}
+                    </div>
+                {% endwith %}
+            {% else %}
+                <a href="{% url 'listing_detail' listing.pk %}" class="flex items-center justify-center h-full w-full bg-slate-100 text-slate-300 hover:text-slate-400 transition-colors">
+                    <svg class="w-12 h-12" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm16.5-1.5H3.75" /></svg>
+                </a>
+            {% endif %}
+        {% endwith %}
+
+        {% if listing.status == 'sold' %}
+            <div class="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold uppercase px-2.5 py-1 rounded-full shadow z-10">{% trans "Продано" %}</div>
+        {% endif %}
+
+        <div class="absolute top-2.5 right-2.5 z-10">
+            {% if request.user.is_authenticated %}
+                {# favorite_status_dict - это то, что было передано как favorite_status из marketplace.html или favorite_status_for_related из listing_detail.html #}
+                {% with current_listing_is_favorite=favorite_status_dict|get_item:listing.id|default:False %}
+                    {% include 'marketplace/partials/favorite_button_listing.html' with listing=listing is_favorite=current_listing_is_favorite source=source|default:'list' %}
+                {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="p-4 flex flex-col flex-grow">
+        <div class="flex items-center justify-between text-xs mb-2">
+            {% if listing.category %}
+                <a href="{{ listing.category.get_absolute_url }}" class="text-yellow-600 hover:text-yellow-800 font-medium uppercase tracking-wider hover:underline">{{ listing.category.name }}</a>
+            {% endif %}
+            <span class="text-gray-500 px-2 py-0.5 bg-gray-100 rounded">{{ listing.get_condition_display }}</span>
+        </div>
+        <h3 class="text-md font-semibold text-gray-800 mb-1 leading-snug flex-grow min-h-[3em]">
+            <a href="{% url 'listing_detail' listing.pk %}" title="{{ listing.title }}" class="hover:text-[var(--primary)] transition-colors duration-150 line-clamp-2">
+                {{ listing.title }}
+            </a>
+        </h3>
+        <p class="text-xs text-gray-500 mb-3 flex items-center gap-1 flex-wrap">
+            <svg class="w-3.5 h-3.5 inline-block flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /> <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /> </svg>
+            <span>{{ listing.city|default:_("Не вказано") }}</span>
+            <span class="text-gray-300 mx-0.5">•</span>
+            <time datetime="{{ listing.created_at|date:'c' }}" title="{{ listing.created_at|date:'d M Y, H:i' }}">
+                {{ listing.created_at|timesince }} {% trans "тому" %}
+            </time>
+        </p>
+        <div class="mt-auto pt-2 border-t border-gray-100">
+            <div class="text-xl font-bold text-gray-900">
+                {{ listing.price|floatformat:"-2"|intcomma }}
+                <span class="text-base font-medium text-gray-700 ml-0.5">{{ listing.currency_symbol }}</span>
+            </div>
+        </div>
+    </div>
+</div>

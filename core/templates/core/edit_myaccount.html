@@ -1,0 +1,95 @@
+{% extends 'core/main.html' %}
+
+{% block title %}Редагувати профіль{% endblock %}
+
+{% block content %}
+    <div class="max-w-2xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="bg-white p-8 rounded-xl shadow-lg border border-neutral-200/75">
+            <h1 class="mb-8 text-3xl font-bold text-center text-neutral-900">Редагувати профіль</h1>
+
+            <form method="post" action="." enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:gap-6 space-y-4 sm:space-y-0">
+                    <div class="shrink-0 mx-auto sm:mx-0">
+                        {% if profile.avatar %}
+                            <img id="avatar-preview" src="{{ profile.avatar.url }}" alt="Поточний аватар" class="h-20 w-20 object-cover rounded-full shadow-md border-2 border-neutral-300">
+                        {% else %}
+                            <img id="avatar-preview" src="/static/default-avatar.png" alt="Аватар за замовчуванням" class="h-20 w-20 object-cover rounded-full shadow-md border-2 border-neutral-300 bg-neutral-100">
+                        {% endif %}
+                    </div>
+                    <label for="avatar" class="block w-full">
+                        <span class="sr-only">Вибрати аватар</span>
+                        <input id="avatar" name="avatar" type="file" accept="image/*" onchange="previewAvatar(event)" class="block w-full text-sm text-neutral-500
+                                                                                                                             file:mr-4 file:py-1.5 file:px-4 file:cursor-pointer
+                                                                                                                             file:rounded-lg file:border file:border-neutral-300
+                                                                                                                             file:text-sm file:font-medium
+                                                                                                                             file:bg-neutral-50 file:text-neutral-700
+                                                                                                                             hover:file:bg-neutral-100
+                                                                                                                             file:transition-colors file:duration-150
+                                                                                                                            "/>
+                    </label>
+                </div>
+
+                {% with input_classes="w-full mt-1 py-2 px-3 bg-white rounded-lg border border-neutral-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 focus:outline-none transition duration-150 ease-in-out shadow-sm text-sm placeholder:text-neutral-400" %}
+                    <div>
+                        <label for="first_name" class="block text-sm font-medium text-neutral-700 mb-0.5">Ім'я</label>
+                        <input id="first_name" name="first_name" value="{{ request.user.first_name }}" type="text" class="{{ input_classes }}" placeholder="Ваше ім'я">
+                        {% if form.first_name.errors %}<p class="text-red-600 text-xs mt-1">{{ form.first_name.errors|striptags }}</p>{% endif %}
+                    </div>
+
+                    <div>
+                        <label for="last_name" class="block text-sm font-medium text-neutral-700 mb-0.5">Прізвище</label>
+                        <input id="last_name" name="last_name" value="{{ request.user.last_name }}" type="text" class="{{ input_classes }}" placeholder="Ваше прізвище">
+                        {% if form.last_name.errors %}<p class="text-red-600 text-xs mt-1">{{ form.last_name.errors|striptags }}</p>{% endif %}
+                    </div>
+
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-neutral-700 mb-0.5">Логін <span class="text-red-500">*</span></label>
+                        <input id="username" name="username" value="{{ request.user.username }}" type="text" class="{{ input_classes }}" placeholder="Ім'я користувача" required>
+                        {% if form.username.errors %}<p class="text-red-600 text-xs mt-1">{{ form.username.errors|striptags }}</p>{% endif %}
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-neutral-700 mb-0.5">E-mail <span class="text-red-500">*</span></label>
+                        <input id="email" name="email" value="{{ request.user.email }}" type="email" class="{{ input_classes }}" placeholder="you@example.com" required>
+                        {% if form.email.errors %}<p class="text-red-600 text-xs mt-1">{{ form.email.errors|striptags }}</p>{% endif %}
+                    </div>
+                {% endwith %}
+
+                {% if form.non_field_errors %}
+                    <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm">
+                        {% for error in form.non_field_errors %}
+                            <p class="text-red-800">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="pt-5">
+                    <button type="submit" class="w-full py-2.5 px-5 rounded-lg text-white font-semibold bg-[var(--primary)] hover:bg-[var(--accent)] hover:text-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)] transition-all duration-200 ease-in-out shadow-sm hover:shadow-md">
+                        Зберегти зміни
+                    </button>
+                </div>
+                <div class="text-center pt-1">
+                    <a href="{% url 'myaccount' %}" class="text-sm text-neutral-600 hover:text-[var(--primary)] hover:underline transition-colors duration-150">
+                        Скасувати
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+    <script>
+        function previewAvatar(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const output = document.getElementById('avatar-preview');
+                output.src = reader.result;
+            };
+            if (event.target.files && event.target.files[0]) { // Добавлена проверка на существование event.target.files
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        }
+    </script>
+{% endblock %}

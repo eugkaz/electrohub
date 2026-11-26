@@ -1,0 +1,132 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Створення Акаунту" %} - ElectroHub{% endblock %}
+
+{% block content %}
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-100">
+        <div class="w-full max-w-lg p-4">
+            <div class="bg-white p-8 sm:p-10 rounded-xl shadow-xl border border-gray-200">
+
+                <div class="text-center mb-10">
+                    <a href="{% url 'frontpage' %}" class="inline-block">
+                    </a>
+                    <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                        {% trans "Створити акаунт" %}
+                    </h2>
+                    <p class="mt-2 text-sm text-gray-600">
+                        {% trans "Швидко та легко. Приєднуйтесь до нас!" %}
+                    </p>
+                </div>
+
+                <form method="post" action="." class="space-y-6">
+                    {% csrf_token %}
+
+                {# Эти переменные используются только для стилей, не для имен полей #}
+                    {% with base_input_classes="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none transition duration-150 ease-in-out shadow-sm text-sm placeholder-gray-400 text-gray-900" error_input_classes="border-red-500 focus:ring-red-500 focus:border-red-500" %}
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
+                            <div>
+                                <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">{% trans "Ім'я" %}</label>
+                                <input id="{{ form.first_name.id_for_label }}" type="text" name="{{ form.first_name.html_name }}" autocomplete="given-name" {# Используем form.field.html_name для name #}
+                                       class="{{ base_input_classes }}{% if form.first_name.errors %} {{ error_input_classes }}{% endif %}" placeholder="{% trans 'Імʼя' %}"
+                                       value="{{ form.first_name.value|default:'' }}">
+                                {% if form.first_name.errors %}
+                                    <p class="text-red-600 text-xs mt-1.5">{{ form.first_name.errors|striptags }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">{% trans "Прізвище" %}</label>
+                                <input id="{{ form.last_name.id_for_label }}" type="text" name="{{ form.last_name.html_name }}" autocomplete="family-name" {# Используем form.field.html_name для name #}
+                                       class="{{ base_input_classes }}{% if form.last_name.errors %} {{ error_input_classes }}{% endif %}" placeholder="{% trans 'Прізвище' %}"
+                                       value="{{ form.last_name.value|default:'' }}">
+                                {% if form.last_name.errors %}
+                                    <p class="text-red-600 text-xs mt-1.5">{{ form.last_name.errors|striptags }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.username.label_tag }} <span class="text-red-600">*</span></label> {# Можно form.username.label_tag для лейбла #}
+                            <input id="{{ form.username.id_for_label }}" type="text" name="{{ form.username.html_name }}" autocomplete="username" required
+                                   class="{{ base_input_classes }}{% if form.username.errors %} {{ error_input_classes }}{% endif %}" placeholder="{% trans 'username' %}"
+                                   value="{{ form.username.value|default:'' }}">
+                            {% if form.username.errors %}
+                                <p class="text-red-600 text-xs mt-1.5">{{ form.username.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.email.label_tag }} <span class="text-red-600">*</span></label>
+                            <input id="{{ form.email.id_for_label }}" type="email" name="{{ form.email.html_name }}" autocomplete="email" required
+                                   class="{{ base_input_classes }}{% if form.email.errors %} {{ error_input_classes }}{% endif %}" placeholder="you@example.com"
+                                   value="{{ form.email.value|default:'' }}">
+                            {% if form.email.errors %}
+                                <p class="text-red-600 text-xs mt-1.5">{{ form.email.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+                                {{ form.password1.label_tag }} <span class="text-red-600">*</span>
+                            </label>
+                            <input id="{{ form.password1.id_for_label }}"
+                                   type="password"
+                                   name="{{ form.password1.html_name }}"
+                                   autocomplete="new-password"
+                                   required
+                                   class="{{ base_input_classes }}{% if form.password1.errors %} {{ error_input_classes }}{% endif %}"
+                                   placeholder="{% if form.password1.widget.attrs.placeholder %}{{ form.password1.widget.attrs.placeholder }}{% else %}••••••••{% endif %}">
+                            {% if form.password1.errors %}
+                                <p class="text-red-600 text-xs mt-1.5">{{ form.password1.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.password2.label_tag }} <span class="text-red-600">*</span></label>
+                            <input id="{{ form.password2.id_for_label }}"
+                                   type="password"
+                                   name="{{ form.password2.html_name }}"
+                                   autocomplete="new-password"
+                                   required
+                                   class="{{ base_input_classes }}{% if form.password2.errors %} {{ error_input_classes }}{% endif %}"
+                                   placeholder="{% if form.password2.widget.attrs.placeholder %}{{ form.password2.widget.attrs.placeholder }}{% else %}••••••••{% endif %}">
+                            {% if form.password2.errors %}
+                                <p class="text-red-600 text-xs mt-1.5">{{ form.password2.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+
+                    {% endwith %}
+
+                    {% if form.non_field_errors %}
+                        <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded-md">
+                            {% for error in form.non_field_errors %}
+                                <p class="text-sm font-medium text-red-700">{{ error|escape }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="pt-4">
+                        <button type="submit" class="w-full py-3 px-5 rounded-lg text-base font-semibold text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-4 focus:ring-yellow-300 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                            {% trans "Зареєструватися" %}
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-8 text-center">
+                    <p class="text-sm text-gray-600">
+                        {% trans "Вже є акаунт?" %}
+                        <a href="{% url 'login' %}" class="font-semibold text-yellow-600 hover:text-yellow-500 hover:underline">
+                            {% trans "Увійти" %}
+                        </a>
+                    </p>
+                </div>
+            </div>
+            <p class="mt-10 text-center text-xs text-gray-500">
+                © {% now "Y" %} ElectroHub. {% trans "Всі права захищено." %}
+            </p>
+        </div>
+    </div>
+{% endblock %}

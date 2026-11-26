@@ -1,0 +1,175 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Ваш Кошик - ElectroHub{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-50 py-10 md:py-12 lg:py-16 min-h-[calc(100vh-150px)]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-8 md:mb-10 border-b border-gray-200 pb-4">
+                Ваш Кошик
+            </h1>
+
+            <div class="lg:grid lg:grid-cols-12 lg:gap-8 xl:gap-12 lg:items-start">
+                <section aria-labelledby="cart-heading" class="lg:col-span-8 xl:col-span-9">
+                    <h2 id="cart-heading" class="sr-only">Товари у вашому кошику</h2>
+                    <div id="cart-items-container" class="flow-root cart-item"> {# Важливо, щоб цей ID був для HTMX OOB #}
+                        {% if cart %} {# 'cart' тут передається з cart_view #}
+                            <ul role="list" class="-my-6 divide-y divide-gray-200 border-t border-b border-gray-200">
+                                {% for item_dict in cart %} {# Ітеруємо по об'єкту Cart, який передано з view #}
+                        {# Включаємо паршиал, який має бути оновлений для роботи з item_dict #}
+                                    {% include 'cart/partials/cart_item.html' with item=item_dict %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="text-center py-16 px-6 bg-white rounded-lg border border-dashed border-gray-300">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
+                                <h3 class="mt-2 text-base font-semibold text-gray-900">Ваш кошик порожній</h3>
+                                <p class="mt-1 text-sm text-gray-500">Додайте товари з каталогу, щоб продовжити.</p>
+                                <div class="mt-6">
+                                    <a href="{% url 'shop' %}" class="inline-flex items-center rounded-md bg-yellow-400 px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:bg-yellow-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-500">
+                                        <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+                                        Перейти до каталогу
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                {% if cart %}
+                    <section aria-labelledby="summary-heading" class="lg:col-span-4 xl:col-span-3 mt-8 lg:mt-0">
+                {# Використовуємо ID, який оновлюється через OOB з update_cart view #}
+                        <div id="summary-block" class="lg:sticky lg:top-24 bg-white rounded-2xl shadow-xl border border-gray-200/80 p-6 transition-all duration-300"> {# Змінив клас для прилипання #}
+                            <h2 id="summary-heading" class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-5">
+                                Підсумок замовлення
+                            </h2>
+                            <dl class="space-y-4 text-sm">
+                                <div class="flex items-center justify-between">
+                                    <dt class="text-gray-600">Загальна вартість товарів:</dt>
+                            {# Використовуємо ID, який оновлюється через OOB з update_cart view #}
+                                    <dd id="cart-summary-total-container" class="font-medium text-gray-900">
+                                        {% include 'cart/partials/cart_summary_total.html' with cart=cart %}
+                                    </dd>
+                                </div>
+                        {# Можна додати інші рядки, наприклад, доставка, якщо вона розраховується #}
+                                <div class="flex items-center justify-between border-t border-gray-200 pt-4">
+                                    <dt class="text-base font-semibold text-gray-900">До сплати:</dt>
+                            {# Цей блок також може оновлюватися через OOB, якщо ID співпадає #}
+                                    <dd class="text-base font-semibold text-gray-900 cart-summary-total-value"> {# Додав клас для можливого JS доступу #}
+                                        {{ cart.get_total_cost|floatformat:"2" }} грн
+                                    </dd>
+                                </div>
+                            </dl>
+                            <p class="mt-6 text-xs text-center text-gray-500 leading-relaxed">
+                                Оплата при отриманні товару або карткою онлайн.<br>Деталі доставки узгодить менеджер.
+                            </p>
+                            <div class="mt-6">
+                                <a href="{% url 'cart:checkout_page' %}" {# Змінено на checkout_page #}
+                                   class="block w-full text-center px-6 py-3 rounded-xl bg-yellow-400 text-gray-900 font-semibold text-base shadow hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200">
+                                    Оформити замовлення
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %} {# Змінено з script на scripts для узгодженості #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () { // Обертаємо в DOMContentLoaded
+            const summaryBlock = document.getElementById('summary-block');
+            const footer = document.querySelector('footer'); // Припускаємо, що є тег footer
+            const mainContentArea = document.querySelector('.max-w-7xl'); // Головний контейнер контенту
+
+            if (!summaryBlock || !footer || !mainContentArea) {
+        // console.warn("Summary block, footer or main content area not found for sticky summary.");
+                return;
+            }
+
+    // Функція для оновлення позиції блоку підсумку
+            function updateSummaryPosition() {
+                if (window.innerWidth < 1024) { // lg breakpoint Tailwind
+                    summaryBlock.style.position = 'relative';
+                    summaryBlock.style.top = 'auto';
+                    summaryBlock.style.width = 'auto';
+                    return;
+                }
+
+                const mainRect = mainContentArea.getBoundingClientRect();
+                const footerRect = footer.getBoundingClientRect();
+                const blockHeight = summaryBlock.offsetHeight;
+                const scrollTop = window.scrollY;
+
+        // Початкова позиція блоку відносно верху документа
+        // Потрібно розрахувати, де він має бути, коли не прилипший
+                const initialTopOffset = summaryBlock.dataset.initialTop ? parseFloat(summaryBlock.dataset.initialTop) : (summaryBlock.offsetTop + mainRect.top + scrollTop);
+                if(!summaryBlock.dataset.initialTop) {
+                    summaryBlock.dataset.initialTop = initialTopOffset - (mainRect.top + scrollTop) ; // Зберігаємо відносний зсув
+                }
+
+
+                const topMargin = 24 * 4; // Відступ від верху (наприклад, 6rem або 96px, або висота вашого хедера + відступ)
+                const bottomMargin = 20; // Відступ від футера
+
+        // Коли верхній край блоку summary досягає topMargin від верху вікна
+                const stickCondition = scrollTop + topMargin >= initialTopOffset;
+
+        // Коли нижній край блоку summary досягає футера
+                const unstickCondition = scrollTop + topMargin + blockHeight + bottomMargin >= (footerRect.top + scrollTop);
+
+                if (stickCondition && !unstickCondition) {
+                    summaryBlock.style.position = 'fixed';
+                    summaryBlock.style.top = `${topMargin}px`;
+                    summaryBlock.style.width = `${summaryBlock.offsetWidth}px`; // Зберігаємо ширину
+                } else if (unstickCondition) {
+            // Прикріплюємо до низу перед футером
+                    summaryBlock.style.position = 'absolute';
+            // Позиціонуємо відносно батьківського елемента, щоб він був над футером
+            // Це може потребувати, щоб батьківський елемент мав position: relative
+            // І розрахунок top буде складнішим.
+            // Простіший варіант - динамічно змінювати bottom або margin-bottom
+            // Поки що, залишаємо його "плавати" доки не дійде до футера.
+            // Якщо summaryBlock виходить за межі батьківського контейнера,
+            // то ця логіка потребує доопрацювання.
+                    const parentOfSummary = summaryBlock.offsetParent || document.body;
+                    const parentFooterDistance = (footerRect.top + scrollTop) - (parentOfSummary.getBoundingClientRect().top + scrollTop);
+                    summaryBlock.style.top = `${parentFooterDistance - blockHeight - bottomMargin}px`;
+                    summaryBlock.style.width = `${summaryBlock.offsetWidth}px`;
+                } else {
+            // Повертаємо до потоку
+                    summaryBlock.style.position = 'relative'; // Або 'static', залежно від верстки
+                    summaryBlock.style.top = 'auto'; // Скидаємо top
+                    summaryBlock.style.width = 'auto'; // Скидаємо ширину
+                }
+            }
+
+    // Викликаємо при завантаженні та при скролі/зміні розміру
+            if (window.innerWidth >= 1024) { // Тільки для великих екранів
+                updateSummaryPosition();
+                window.addEventListener('scroll', updateSummaryPosition);
+                window.addEventListener('resize', updateSummaryPosition);
+            } else { // Для мобільних скидаємо стилі, якщо вони були встановлені
+                summaryBlock.style.position = 'relative';
+                summaryBlock.style.top = 'auto';
+                summaryBlock.style.width = 'auto';
+            }
+    // Перевіряємо при зміні розміру вікна, чи потрібно активувати/деактивувати sticky
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024) {
+                    updateSummaryPosition();
+                    window.addEventListener('scroll', updateSummaryPosition);
+                } else {
+                    window.removeEventListener('scroll', updateSummaryPosition);
+                    summaryBlock.style.position = 'relative';
+                    summaryBlock.style.top = 'auto';
+                    summaryBlock.style.width = 'auto';
+                }
+            });
+        });
+    </script>
+{% endblock scripts %}

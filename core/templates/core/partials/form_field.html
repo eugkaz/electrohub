@@ -1,0 +1,31 @@
+{# core/partials/form_field.html #}
+{% load widget_tweaks %} {# Можливо, знадобиться pip install django-widget-tweaks #}
+
+{% comment %}
+Context:
+ - field: Об'єкт поля форми Django
+ - no_label (optional): True, якщо не потрібно показувати <label>
+ - wrapper_class (optional): Додаткові класи для div-обгортки
+{% endcomment %}
+
+<div class="{{ wrapper_class|default:'' }}">
+    {% if not no_label and not field.is_hidden %}
+        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5 {% if field.field.required %}required{% endif %}">
+            {{ field.label }}
+            {% if field.field.required %}<span class="text-red-500 ml-0.5">*</span>{% endif %}
+        </label>
+    {% endif %}
+
+    {# Використовуємо widget_tweaks для додавання класів, якщо вони не були додані у формі #}
+    {# Або просто рендеримо поле, якщо класи вже є у формі #}
+    {{ field }}
+
+    {% if not field.is_hidden %}
+        {% if field.errors %}
+            <p class="text-red-600 text-xs mt-1">{{ field.errors|striptags }}</p>
+        {% endif %}
+        {% if field.help_text %}
+            <p class="mt-1.5 text-xs text-gray-500">{{ field.help_text|safe }}</p>
+        {% endif %}
+    {% endif %}
+</div>

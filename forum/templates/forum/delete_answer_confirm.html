@@ -1,0 +1,37 @@
+{% extends 'core/main.html' %}
+{% load static %}
+
+{% block title %}Підтвердити видалення - Форум ElectroHub{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-100 py-10 md:py-12 lg:py-16">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-xl shadow-xl border border-gray-200/75 overflow-hidden">
+                <div class="p-6 md:p-8 border-b border-gray-200">
+                    <h1 class="text-xl md:text-2xl font-semibold text-red-700">Підтвердити видалення відповіді</h1>
+                    <p class="text-sm text-gray-600 mt-1">До теми: <a href="{{ answer.user_post.get_absolute_url }}" class="text-yellow-600 hover:underline">{{ answer.user_post.title }}</a></p>
+                </div>
+
+                <div class="p-6 md:p-8">
+                    <p class="text-base text-gray-800 mb-4">Ви впевнені, що хочете видалити наступну відповідь? Ця дія невідворотна.</p>
+
+                    <blockquote class="border-l-4 border-gray-300 pl-4 py-2 mb-6 bg-gray-50 text-sm text-gray-700 italic">
+                        {{ answer.content|truncatewords_html:50|linebreaksbr }} {# Показуємо частину контенту #}
+                    </blockquote>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mt-6 flex items-center justify-end gap-3">
+                            <a href="{{ answer.user_post.get_absolute_url }}#answer-{{ answer.pk }}" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm">
+                                Скасувати
+                            </a>
+                            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 transition-colors duration-200">
+                                Так, видалити відповідь
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

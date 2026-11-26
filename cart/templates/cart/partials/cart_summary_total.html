@@ -1,0 +1,9 @@
+{# cart/partials/cart_summary_total.html #}
+{% load custom_filters %} {# Якщо потрібен #}
+
+{# Приймає змінну 'cart' (об'єкт Cart) #}
+{% if cart %} {# Перевірка, чи об'єкт cart існує #}
+    {{ cart.get_total_cost|floatformat:"0" }} ₴ {# Використовуємо метод get_total_cost #}
+{% else %}
+    0 ₴
+{% endif %}

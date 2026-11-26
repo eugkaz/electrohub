@@ -1,0 +1,56 @@
+{% load custom_filters %}
+
+{# `answer` передається з батьківського шаблону (topic-detail.html) #}
+<div class="flex items-center gap-x-2 pt-2">
+
+    <!-- Upvote Button -->
+    <form action="{% url 'upvote' %}" method="POST" class="inline-block">
+        {% csrf_token %}
+        <input type="hidden" name="answer_id" value="{{ answer.id }}">
+        <button type="submit" title="Подобається"
+                class="group inline-flex items-center gap-x-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-green-500
+                       {% if request.user in answer.upvotes.all %}
+                           bg-green-100 text-green-700 ring-1 ring-inset ring-green-200 shadow-sm hover:bg-green-200/80
+                       {% else %}
+                           bg-white text-gray-500 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 hover:text-green-600
+                       {% endif %}">
+            {# Нова іконка "Вгору" #}
+            <svg class="h-4 w-4 {% if request.user in answer.upvotes.all %} stroke-green-600 {% else %} stroke-gray-400 group-hover:stroke-green-500 {% endif %}"
+                 viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 10V20M8 10L4 9.99998V20L8 20M8 10L13.1956 3.93847C13.6886 3.3633 14.4642 3.11604 15.1992 3.29977L15.2467 3.31166C16.5885 3.64711 17.1929 5.21057 16.4258 6.36135L14 9.99998H18.5604C19.8225 9.99998 20.7691 11.1546 20.5216 12.3922L19.3216 18.3922C19.1346 19.3271 18.3138 20 17.3604 20L8 20"
+                      stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
+            </svg>
+            {# Лічильник голосів "За" #}
+            <span class="font-semibold {% if request.user in answer.upvotes.all %} text-green-800 {% else %} text-gray-700 group-hover:text-green-700 {% endif %}">
+                {{ answer.upvotes.count|default:0 }}
+            </span>
+            <span class="sr-only">Подобається</span>
+        </button>
+    </form>
+
+    <!-- Downvote Button -->
+    <form action="{% url 'downvote' %}" method="POST" class="inline-block">
+        {% csrf_token %}
+        <input type="hidden" name="answer_id" value="{{ answer.id }}">
+        <button type="submit" title="Не подобається"
+                class="group inline-flex items-center gap-x-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-red-500
+                       {% if request.user in answer.downvotes.all %}
+                           bg-red-100 text-red-700 ring-1 ring-inset ring-red-200 shadow-sm hover:bg-red-200/80
+                       {% else %}
+                           bg-white text-gray-500 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 hover:text-red-600
+                       {% endif %}">
+             {# Нова іконка "Вниз" #}
+            <svg class="h-4 w-4 {% if request.user in answer.downvotes.all %} stroke-red-600 {% else %} stroke-gray-400 group-hover:stroke-red-500 {% endif %}"
+                 viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 14V4M8 14L4 14V4.00002L8 4M8 14L13.1956 20.0615C13.6886 20.6367 14.4642 20.884 15.1992 20.7002L15.2467 20.6883C16.5885 20.3529 17.1929 18.7894 16.4258 17.6387L14 14H18.5604C19.8225 14 20.7691 12.8454 20.5216 11.6078L19.3216 5.60779C19.1346 4.67294 18.3138 4.00002 17.3604 4.00002L8 4"
+                      stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
+            </svg>
+             {# Лічильник голосів "Проти" #}
+            <span class="font-semibold {% if request.user in answer.downvotes.all %} text-red-800 {% else %} text-gray-700 group-hover:text-red-700 {% endif %}">
+                {{ answer.downvotes.count|default:0 }}
+            </span>
+            <span class="sr-only">Не подобається</span>
+        </button>
+    </form>
+
+</div>

@@ -1,0 +1,397 @@
+{% extends 'administration/base_admin.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block admin_title %}{{ page_title|default:_("Головна Панель") }} - ElecrtoHub Admin{% endblock %}
+
+{% block page_header %}
+    <h1 class="text-2xl sm:text-3xl font-semibold text-gray-800 dark:text-gray-100 mb-6">
+        {{ page_title|default:_("Головна Панель Адміністратора") }}
+    </h1>
+{% endblock %}
+
+{% block admin_content %}
+{# Секція зі статистикою #}
+    {% if stats %}
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">{% trans "Загальна Статистика" %}</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+
+        {# Картка для користувачів #}
+                <div
+                    class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl hover:border-yellow-400 dark:hover:border-yellow-500">
+                    <a href="{% url 'administration:user_list' %}" class="block group">
+                        <div class="flex items-center">
+                            <div
+                                class="p-3 rounded-full bg-blue-100 dark:bg-blue-800/50 text-blue-600 dark:text-blue-400 mr-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-700 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M5.121 17.804A4 4 0 0112 14a4 4 0 016.879 3.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p
+                                    class="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                                    {% trans "Користувачі" %}</p>
+                                <p
+                                    class="text-2xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    {{ stats.total_users|intcomma }}</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+        {# Картка для товарів #}
+                <div
+                    class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl hover:border-yellow-400 dark:hover:border-yellow-500">
+                    <a href="{% url 'administration:product_list' %}" class="block group">
+                        <div class="flex items-center">
+                            <div
+                                class="p-3 rounded-full bg-green-100 dark:bg-green-800/50 text-green-600 dark:text-green-400 mr-4 group-hover:bg-green-200 dark:group-hover:bg-green-700 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p
+                                    class="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                                    {% trans "Товари" %}</p>
+                                <p
+                                    class="text-2xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                                    {{ stats.total_products|intcomma }}</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+        {# Картка для замовлень #}
+                <div
+                    class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl hover:border-yellow-400 dark:hover:border-yellow-500">
+                    <a href="{% url 'administration:order_list' %}" class="block group">
+                        <div class="flex items-center">
+                            <div
+                                class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-800/50 text-yellow-600 dark:text-yellow-400 mr-4 group-hover:bg-yellow-200 dark:group-hover:bg-yellow-700 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                                    {% trans "Замовлення" %}
+                                </p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors">
+                                    {{ stats.total_orders|intcomma }}
+                                </p>
+
+    {% comment %} 
+    Створюємо "віртуальну" строку-список активних статусів для коректної розстановки ком.
+    Кожна буква відповідає статусу: p=pending, r=processing, a=paid.
+    {% endcomment %}
+                                {% with active_statuses_list="" %}
+        {# Крок 1: Формуємо строку-флаг, наприклад "pr" або "pa" або "pra" #}
+                                    {% if stats.pending_orders > 0 %}{% with active_statuses_list=active_statuses_list|add:"p" %}{% endwith %}{% endif %}
+                                    {% if stats.processing_orders > 0 %}{% with active_statuses_list=active_statuses_list|add:"r" %}{% endwith %}{% endif %}
+                                    {% if stats.paid_orders > 0 %}{% with active_statuses_list=active_statuses_list|add:"a" %}{% endwith %}{% endif %}
+
+        {# Крок 2: Виводимо дані, якщо строка-флаг не порожня #}
+                                    {% if active_statuses_list %}
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+
+                {# Виводимо "Очікує" #}
+                                            {% if 'p' in active_statuses_list %}
+                                                <span class="text-yellow-600 dark:text-yellow-400">
+                                                    {{ stats.pending_orders }} {{ stats.pending_orders|pluralize:"очікує,очікують,очікують" }}
+                                                </span>{# Ставимо кому, якщо після цього статусу є ще хоча б один (довжина строки > 1) #}
+                                                {% if active_statuses_list|slice:"1:" %}, {% endif %}
+                                            {% endif %}
+
+                {# Виводимо "В обробці" #}
+                                            {% if 'r' in active_statuses_list %}
+                                                <span class="text-blue-600 dark:text-blue-400">
+                                                    {{ stats.processing_orders }} {% trans "в обробці" %}
+                                                </span>{# Ставимо кому, якщо це не останній елемент. Перевіряємо, чи є після 'r' ще буква 'a' #}
+                                                {% if 'a' in active_statuses_list and 'r' in active_statuses_list %}, {% endif %}
+                                            {% endif %}
+
+                {# Виводимо "Оплачено" #}
+                                            {% if 'a' in active_statuses_list %}
+                                                <span class="text-green-600 dark:text-green-400">
+                                                    {{ stats.paid_orders }} {{ stats.paid_orders|pluralize:"оплачено,оплачено,оплачено" }}
+                                                </span>
+                                            {% endif %}
+
+                                        </p>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+        {# Картка для оголошень #}
+                <div
+                    class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl hover:border-yellow-400 dark:hover:border-yellow-500">
+                    <a href="{% url 'administration:listing_list' %}" class="block group">
+                        <div class="flex items-center">
+                            <div
+                                class="p-3 rounded-full bg-indigo-100 dark:bg-indigo-800/50 text-indigo-600 dark:text-indigo-400 mr-4 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-700 transition-colors">
+                                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6M9 12h6m-6 5.25h6M5.25 6.75h-.008v.008H5.25V6.75zm0 5.25h-.008v.008H5.25v-.008zm0 5.25h-.008v.008H5.25v-.008zm13.5 0h.008v.008h-.008v-.008zm0-5.25h.008v.008h-.008v-.008zm0-5.25h.008v.008h-.008V6.75z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p
+                                    class="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                                    {% trans "Оголошення" %}</p>
+                                <p
+                                    class="text-2xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                    {{ stats.total_listings|intcomma }}</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div
+                    class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl hover:border-yellow-400 dark:hover:border-yellow-500">
+                    <a href="{% url 'administration:chargingstation_list' %}" class="block group">
+                        <div class="flex items-center">
+                            <div
+                                class="p-3 rounded-full bg-purple-100 dark:bg-purple-800/50 text-purple-600 dark:text-purple-400 mr-4 group-hover:bg-purple-200 dark:group-hover:bg-purple-700 transition-colors">
+                                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p
+                                    class="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                                    {% trans "Зарядні Станції" %}</p>
+                                <p
+                                    class="text-2xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                                    {{ stats.active_charging_stations|intcomma }}</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div
+                    class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl hover:border-yellow-400 dark:hover:border-yellow-500">
+                    <a href="{% url 'administration:forumuserpost_list' %}" class="block group">
+                        <div class="flex items-center">
+                            <div
+                                class="p-3 rounded-full bg-pink-100 dark:bg-pink-800/50 text-pink-600 dark:text-pink-400 mr-4 group-hover:bg-pink-200 dark:group-hover:bg-pink-700 transition-colors">
+                                <svg class="w-6 h-6 fill-current" viewBox="0 0 120.46 122.88" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                                    <title>Форум</title>
+                                    <path d="M17.2,0h62.29c4.73,0,9.03,1.93,12.15,5.05c3.12,3.12,5.05,7.42,5.05,12.15v38.35c0,4.73-1.93,9.03-5.05,12.15
+                                             c-3.12,3.12-7.42,5.05-12.15,5.05H46.92L20.81,95.2c-1.21,1.04-3.04,0.9-4.08-0.32c-0.51-0.6-0.74-1.34-0.69-2.07l1.39-20.07H17.2
+                                             c-4.73,0-9.03-1.93-12.15-5.05C1.93,64.58,0,60.28,0,55.55V17.2c0-4.73,1.93-9.03,5.05-12.15C8.16,1.93,12.46,0,17.2,0L17.2,0
+                                             L17.2,0z M63.12,29.37c4.48,0,8.11,3.63,8.11,8.11c0,4.48-3.63,8.11-8.11,8.11c-4.48,0-8.11-3.63-8.11-8.11
+                                             C55.01,33,58.64,29.37,63.12,29.37L63.12,29.37z M33.69,29.37c4.48,0,8.11,3.63,8.11,8.11c0,4.48-3.63,8.11-8.11,8.11
+                                             s-8.11-3.63-8.11-8.11C25.58,33,29.21,29.37,33.69,29.37L33.69,29.37z M106.79,27.98c3.37,0.65,6.39,2.31,8.73,4.65
+                                             c3.05,3.05,4.95,7.26,4.95,11.9v38.35c0,4.64-1.89,8.85-4.95,11.9c-3.05,3.05-7.26,4.95-11.9,4.95h-0.61l1.42,20.44l0,0
+                                             c0.04,0.64-0.15,1.3-0.6,1.82c-0.91,1.07-2.52,1.19-3.58,0.28l-26.21-23.2H39.49l17.01-17.3h36.04c7.86,0,14.3-6.43,14.3-14.3
+                                             V29.11C106.83,28.73,106.82,28.35,106.79,27.98L106.79,27.98L106.79,27.98z M79.48,5.8H17.2c-3.13,0-5.98,1.28-8.05,3.35
+                                             C7.08,11.22,5.8,14.06,5.8,17.2v38.35c0,3.13,1.28,5.98,3.35,8.05c2.07,2.07,4.92,3.35,8.05,3.35h3.34v0.01l0.19,0.01
+                                             c1.59,0.11,2.8,1.49,2.69,3.08l-1.13,16.26l21.54-18.52c0.52-0.52,1.24-0.84,2.04-0.84h33.61c3.13,0,5.98-1.28,8.05-3.35
+                                             c2.07-2.07,3.35-4.92,3.35-8.05V17.2c0-3.13-1.28-5.98-3.35-8.05C85.46,7.08,82.61,5.8,79.48,5.8L79.48,5.8L79.48,5.8z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                                    {% trans "Теми Форуму" %}
+                                </p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                                    {{ stats.forum_topics|intcomma }}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div
+                    class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl hover:border-yellow-400 dark:hover:border-yellow-500">
+                    <a href="{% url 'administration:newslettersubscriber_list' %}" class="block group">
+                        <div class="flex items-center">
+                            <div
+                                class="p-3 rounded-full bg-teal-100 dark:bg-teal-800/50 text-teal-600 dark:text-teal-400 mr-4 group-hover:bg-teal-200 dark:group-hover:bg-teal-700 transition-colors">
+                                <svg class="w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <title>Підписники</title>
+                                    <path fill="currentColor"
+                                          d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75zm1.5 0v.377l8.25 5.06 8.25-5.06V6.75h-16.5zm16.5 1.872l-7.52 4.61a.75.75 0 01-.76 0l-7.52-4.61v8.628h15.8V8.622z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p
+                                    class="text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+                                    {% trans "Підписники" %}
+                                </p>
+                                <p
+                                    class="text-2xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                                    {{ stats.newsletter_subscribers|intcomma }}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    {% endif %}
+
+{# Секція "Останні замовлення" #}
+    {% if recent_orders %}
+        <div class="mt-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300">{% trans "Останні Замовлення" %}</h2>
+                <a href="{% url 'administration:order_list' %}"
+                   class="text-sm font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300">
+                    {% trans "Всі замовлення" %} →
+                </a>
+            </div>
+            <div
+                class="bg-white dark:bg-gray-800 shadow-md rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700/50">
+                        <tr>
+                            <th scope="col"
+                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {% trans "ID" %}</th>
+                            <th scope="col"
+                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {% trans "Клієнт" %}</th>
+                            <th scope="col"
+                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {% trans "Дата" %}</th>
+                            <th scope="col"
+                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {% trans "Сума" %}</th>
+                            <th scope="col"
+                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                {% trans "Статус" %}</th>
+                            <th scope="col" class="relative px-4 py-3">
+                                <span class="sr-only">{% trans "Дії" %}</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {% for order in recent_orders %}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors duration-150">
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                                    {% if order.user %}
+                                        <a href="{% url 'administration:user_detail_admin' order.user.pk %}"
+                                           class="hover:text-yellow-600 dark:hover:text-yellow-400">{{ order.user.username }}</a>
+                                    {% elif order.first_name or order.last_name %}
+                                        {{ order.get_full_name }}
+                                    {% else %}
+                                        {% trans "Гість" %}
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                                    {{ order.created_at|date:"d.m.Y H:i" }}
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">
+                                    {{ order.total_price|floatformat:"2" }} грн
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                    {% include 'administration/partials/status_badge.html' with status_value=order.status status_display=order.get_status_display status_enum=OrderStatus %}
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        {# Переконайтеся, що URL 'administration:order_detail_admin' існує #}
+                                    <a href="{% url 'administration:order_detail_admin' order.id %}"
+                                       class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300">{% trans "Деталі" %}</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    {% trans "Немає недавніх замовлень для відображення." %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if recent_orders.count > 0 and recent_orders.count < stats.total_orders %} {# Показуємо, якщо є більше замовлень #}
+                <div class="mt-4 text-right">
+                    <a href="{% url 'administration:order_list' %}" class="text-sm font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300">
+                        {% trans "Всі замовлення" %} →
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+{# Секція "Швидкі дії" #}
+    <div class="mt-8">
+        <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">{% trans "Швидкі Дії" %}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <a href="{% url 'administration:product_create' %}"
+               class="block p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 text-center transition-all hover:shadow-lg hover:-translate-y-0.5">
+                <div class="flex flex-col items-center justify-center h-full">
+                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-800/50 text-green-600 dark:text-green-400 mb-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </div>
+                    <p class="font-medium text-gray-700 dark:text-gray-200">{% trans "Додати Товар" %}</p>
+                </div>
+            </a>
+            <a href="{% url 'administration:listing_create' %}"
+               class="block p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 text-center transition-all hover:shadow-lg hover:-translate-y-0.5">
+                <div class="flex flex-col items-center justify-center h-full">
+                    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-800/50 text-blue-600 dark:text-blue-400 mb-2">
+                        <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                             stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <p class="font-medium text-gray-700 dark:text-gray-200">{% trans "Створити Оголошення" %}</p>
+                </div>
+            </a>
+            <a href="{% url 'administration:user_list' %}"
+               class="block p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 text-center transition-all hover:shadow-lg hover:-translate-y-0.5">
+                <div class="flex flex-col items-center justify-center h-full">
+                    <div
+                        class="p-3 rounded-full bg-indigo-100 dark:bg-indigo-800/50 text-indigo-600 dark:text-indigo-400 mb-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 016-6h6a6 6 0 016 6v1h-3"></path>
+                        </svg>
+                    </div>
+                    <p class="font-medium text-gray-700 dark:text-gray-200">{% trans "Користувачі" %}</p>
+                </div>
+            </a>
+            <a href="{% url 'administration:order_list' %}"
+               class="block p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 text-center transition-all hover:shadow-lg hover:-translate-y-0.5">
+                <div class="flex flex-col items-center justify-center h-full">
+                    <div
+                        class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-800/50 text-yellow-600 dark:text-yellow-400 mb-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                            </path>
+                        </svg>
+                    </div>
+                    <p class="font-medium text-gray-700 dark:text-gray-200">{% trans "Переглянути Замовлення" %}</p>
+                </div>
+            </a>
+        </div>
+    </div>
+{% endblock %}

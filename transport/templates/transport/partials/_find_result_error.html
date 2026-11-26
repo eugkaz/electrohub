@@ -1,0 +1,12 @@
+{% load i18n %}
+
+
+<div class="pt-6 border-t border-gray-200 animate-fade-in">
+    <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-center">
+        <p class="text-sm font-medium text-red-800">{{ message }}</p>
+    </div>
+</div>
+<style>
+    .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>

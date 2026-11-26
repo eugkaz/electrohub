@@ -1,0 +1,90 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Замовлення Оформлено - ElectroHub{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-160px)]"> {# Зменшив min-h трохи #}
+        <div class="max-w-lg w-full space-y-8 text-center bg-white p-8 sm:p-10 md:p-12 rounded-xl shadow-2xl border border-gray-200/75">
+
+            {% if order %}
+            {# Іконка Успіху #}
+                <div>
+                    <svg class="mx-auto h-16 w-16 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                    Дякуємо, {{ order.first_name|default:order.user.first_name|default:'клієнт' }}!
+                </h1>
+
+                {% if order.payment_method == 'card' and order.status == 'paid' %}
+                    <p class="text-base text-gray-600">
+                        Ваше замовлення <strong class="text-gray-800">#{{ order.id }}</strong> успішно оплачено та прийнято в обробку.
+                        Ми надішлемо підтвердження на ваш email: <strong class="text-gray-800">{{ order.email }}</strong>.
+                    </p>
+                {% elif order.payment_method == 'cash' and order.status == 'processing' %}
+                    <p class="text-base text-gray-600">
+                        Ваше замовлення <strong class="text-gray-800">#{{ order.id }}</strong> прийнято в обробку.
+                        Наш менеджер зв'яжеться з вами за телефоном <strong class="text-gray-800">{{ order.phone }}</strong> для підтвердження деталей.
+                    </p>
+                {% else %}
+                    <p class="text-base text-gray-600">
+                        Статус вашого замовлення <strong class="text-gray-800">#{{ order.id }}</strong>: {{ order.get_status_display }}.
+                        Якщо у вас є питання, будь ласка, зв'яжіться з нами.
+                    </p>
+                {% endif %}
+
+            {# Деталі замовлення (опціонально) #}
+                {% if order.items.all %}
+                    <div class="mt-6 pt-6 border-t border-gray-200 text-left">
+                        <h3 class="text-md font-semibold text-gray-800 mb-3">Деталі замовлення:</h3>
+                        <ul class="divide-y divide-gray-100 text-sm">
+                            {% for item in order.items.all %}
+                                <li class="flex justify-between py-1.5">
+                                    <span>{{ item.product.name }} (x{{ item.quantity }})</span>
+                                    <span>{{ item.get_cost|floatformat:"0" }} грн</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="flex justify-between font-bold text-gray-900 mt-2 pt-2 border-t border-gray-200">
+                            <span>Всього:</span>
+                            <span>{{ order.get_order_total_cost|floatformat:"0" }} грн</span>
+                        </div>
+                    </div>
+                {% endif %}
+
+            {% else %}
+            {# Якщо замовлення не знайдено, але є повідомлення з messages framework #}
+                <div>
+                    <svg class="mx-auto h-16 w-16 text-yellow-500"  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                    Інформація про замовлення
+                </h1>
+                {% if messages %}
+                    {% for message in messages %}
+                        <p class="text-base text-gray-600 {% if message.tags == 'success' %}text-green-700{% elif message.tags == 'error' %}text-red-700{% endif %}">
+                            {{ message }}
+                        </p>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-base text-gray-600">
+                        Дякуємо! Якщо ви щойно оформили замовлення, ми обробляємо його.
+                    </p>
+                {% endif %}
+            {% endif %}
+
+            <div class="pt-6 mt-6 border-t border-gray-200">
+                <a href="{% url 'shop' %}"
+                   class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-transparent rounded-lg text-sm font-semibold text-gray-900 bg-yellow-400 hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-colors duration-200 shadow-md">
+                    Продовжити покупки
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% load i18n %}
+<div class="text-center py-12 px-6">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
+        {% if icon_name == "orders" %}
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5M5.25 6H18a2.25 2.25 0 012.25 2.25v10.5A2.25 2.25 0 0118 21H6a2.25 2.25 0 01-2.25-2.25V8.25A2.25 2.25 0 016 6zM15 6V4.5A1.5 1.5 0 0013.5 3h-3A1.5 1.5 0 009 4.5V6" />
+        {% elif icon_name == "transport" %}
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        {% elif icon_name == "listings" %}
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        {% elif icon_name == "forum" %}
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        {% endif %}
+    </svg>
+    <h3 class="mt-2 text-lg font-medium text-gray-900">{{ title }}</h3>
+    <p class="mt-1 text-sm text-gray-500">{{ subtitle }}</p>
+    <div class="mt-6">
+        <a href="{% url button_url_name %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+            {{ button_text }}
+        </a>
+    </div>
+</div>

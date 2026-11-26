@@ -1,0 +1,142 @@
+{% extends 'core/main.html' %}
+{% load i18n widget_tweaks static %}
+{% block title %}{% trans "Підключити транспорт" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-10 px-4">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900">{% trans "Підключення транспорту" %}</h1>
+        <p class="mt-2 text-sm text-gray-600">{% trans "Виберіть зручний спосіб підключення вашого пристрою." %}</p>
+    </div>
+
+    {% if messages %}
+        <div class="mb-4">
+        {% for message in messages %}
+            <div class="p-3 rounded-md text-sm {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">{{ message }}</div>
+        {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border">
+        <!-- Таби (вкладки) -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button id="tab-manual" onclick="switchTab('manual')" class="tab-button border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">{% trans "Ввести ID вручну" %}</button>
+                <button id="tab-ble" onclick="switchTab('ble')" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">{% trans "Пошук по Bluetooth" %}</button>
+            </nav>
+        </div>
+
+        <!-- Контент для табів -->
+        <div>
+            <!-- Вкладка "Ввести ID вручну" -->
+            <div id="content-manual" class="tab-content">
+                <label for="identifier-input" class="block text-sm font-medium text-gray-700">{% trans "Унікальний ID (UUID) або MAC-адрес" %}</label>
+                <div class="mt-1 relative">
+                    <input type="text" id="identifier-input" name="identifier"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-mono"
+                           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                           hx-get="{% url 'transport:find_vehicle' %}"
+                           hx-trigger="keyup[target.value.length >= 17] changed delay:500ms"
+                           hx-target="#find-vehicle-result"
+                           hx-indicator="#manual-spinner">
+                    <div id="manual-spinner" class="htmx-indicator absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div id="find-vehicle-result" class="mt-6"></div>
+            </div>
+
+            <!-- Вкладка "Пошук по Bluetooth" -->
+            <div id="content-ble" class="tab-content hidden">
+                <div id="ble-not-supported" class="hidden bg-yellow-50 text-yellow-800 p-4 rounded-md text-sm">
+                    <p><strong>{% trans "Увага!" %}</strong> {% trans "Ваш браузер не підтримує Web Bluetooth API, або сайт відкрито не по HTTPS. Будь ласка, використовуйте Google Chrome (на комп'ютері або Android), щоб скористатися цією функцією." %}</p>
+                </div>
+                <div id="ble-interface">
+                    <button id="ble-scan-button" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                        {% trans "Почати сканування" %}
+                    </button>
+                    <p id="ble-status" class="text-sm text-gray-500 mt-4 text-center h-5"></p>
+                    <div id="ble-results" class="mt-4 space-y-2">
+                        <!-- Сюди будуть додаватись знайдені пристрої -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`content-${tabId}`).classList.remove('hidden');
+
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('border-indigo-500', 'text-indigo-600');
+            btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        });
+        const activeTab = document.getElementById(`tab-${tabId}`);
+        activeTab.classList.add('border-indigo-500', 'text-indigo-600');
+        activeTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+    }
+
+    // --- Логіка для Bluetooth ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const scanButton = document.getElementById('ble-scan-button');
+        const statusEl = document.getElementById('ble-status');
+        const resultsEl = document.getElementById('ble-results');
+        const bleNotSupportedEl = document.getElementById('ble-not-supported');
+        const bleInterfaceEl = document.getElementById('ble-interface');
+
+        if (!navigator.bluetooth) {
+            bleNotSupportedEl.classList.remove('hidden');
+            bleInterfaceEl.classList.add('hidden');
+            return;
+        }
+
+        scanButton.addEventListener('click', async () => {
+            statusEl.textContent = "{% trans 'Відкрийте системне вікно та виберіть пристрій...' %}";
+            resultsEl.innerHTML = '';
+            scanButton.disabled = true;
+
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                });
+
+                statusEl.textContent = `{% trans "Пристрій вибрано! Перевіряємо в базі..." %}`;
+                
+                // Важливо: Web Bluetooth API не надає прямого доступу до MAC-адреси з міркувань безпеки.
+                // `device.id` - це унікальний ідентифікатор, який генерує браузер для цього пристрою.
+                // Щоб це працювало, ви повинні занести цей `device.id` в поле `ble_mac_address` у вашій базі.
+                // Для реального продукту потрібно буде передавати унікальний ідентифікатор в advertising packet.
+                const deviceIdentifier = device.id;
+
+                const manualInput = document.getElementById('identifier-input');
+                manualInput.value = deviceIdentifier;
+                
+                // Програмно запускаємо HTMX-запит
+                htmx.trigger(manualInput, 'search'); // 'search' - кастомна подія, яку ми додали в hx-trigger
+                
+                // Переключаємось на першу вкладку, щоб показати результат пошуку
+                switchTab('manual');
+                
+            } catch (error) {
+                console.error('BLE Error:', error);
+                if (error.name === 'NotFoundError') {
+                    statusEl.textContent = "{% trans 'Ви не вибрали пристрій. Спробуйте ще раз.' %}";
+                } else {
+                    statusEl.textContent = `{% trans "Помилка:" %} ${error.message}`;
+                }
+            } finally {
+                scanButton.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% load i18n %}
+{# Цей паршіал оновлює всю секцію з останнім звітом #}
+<h3 class="text-xl font-semibold text-gray-900 mb-4">{% trans "Останній AI Звіт" %}</h3>
+{% if latest_report %}
+    <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-3">
+        <p class="text-xs text-gray-500">
+            {% trans "Згенеровано" %}: {{ latest_report.generated_at|date:"d b Y, H:M" }}
+        </p>
+        <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+            {{ latest_report.ai_summary|linebreaksbr }}
+        </div>
+        <p class="text-xs text-gray-500 pt-2 border-t border-gray-100">
+            {% trans "Стан під час звіту" %}:
+            {% if latest_report.charge_at_report is not None %}{{ latest_report.charge_at_report }}%{% else %}N/A{% endif %},
+            {% trans "Локація" %}: {{ latest_report.location_at_report|default:"N/A" }}
+        </p>
+        <div>
+            <a href="{% url 'transport:download_report_pdf' report_id=latest_report.id %}"
+               class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                {% trans "Завантажити PDF" %}
+            </a>
+        </div>
+    </div>
+{% else %}
+    <p class="text-sm text-gray-500 italic">{% trans "Звіти ще не генерувались." %}</p>
+{% endif %}

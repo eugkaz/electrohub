@@ -1,0 +1,203 @@
+{% extends 'administration/base_admin.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+{% load admin_template_tags %}
+
+
+{% block admin_title %}{% trans "Деталі Замовлення" %} #{{ order_instance.id }} - ElectoHub Admin{% endblock %}
+
+{% block page_header %}
+    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">{% trans "Замовлення" %} #{{ order_instance.id }}</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                {% trans "Створено:" %} {{ order_instance.created_at|date:"d F Y, H:i" }}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'administration:order_list' %}" class="text-sm text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300 font-medium inline-flex items-center mr-4">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                {% trans "До списку замовлень" %}
+            </a>
+            <a href="{% url 'administration:order_update' order_instance.pk %}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition inline-flex items-center shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 19.07a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125M12 15v5.25a.75.75 0 01-.75.75H6.75a.75.75 0 01-.75-.75V15m0 0H3.75a.75.75 0 01-.75-.75V9.75a.75.75 0 01.75-.75h1.5M3.75 15h3.75M3.75 9.75h1.5M12 9.75h3.75M12 15h3.75M12 3.75v5.25M16.5 3.75v5.25M16.5 9.75h1.5A.75.75 0 0119.5 9v.75M19.5 9.75h-1.5m0 0V3.75M19.5 15v-3.75M15 9.75H9.75M15 15H9.75"></path></svg>
+                {% trans "Редагувати замовлення" %}
+            </a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block admin_content %}
+    <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{% trans "Статус Замовлення" %}</h2>
+                    {% with status_val=order_instance.status status_text=order_instance.get_status_display %}
+                        {% if order_status_color_map %}
+                            {% with color=order_status_color_map|get_item:status_val|default:"gray" %}
+                                <p class="mt-1">
+                                    <span class="px-3 py-1 inline-flex text-sm leading-5 font-bold rounded-full bg-{{ color }}-100 text-{{ color }}-800 dark:bg-{{ color }}-700/30 dark:text-{{ color }}-300">
+                                        {{ status_text }}
+                                    </span>
+                                </p>
+                            {% endwith %}
+                        {% else %}
+                            <p class="mt-1 text-lg font-medium text-gray-700 dark:text-gray-300">{{ status_text }}</p>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                <div class="text-right">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{% trans "Загальна Сума" %}</h2>
+                    <p class="mt-1 text-2xl font-bold text-gray-800 dark:text-gray-200">
+                        {{ order_instance.total_price|floatformat:2 }} {{ order_instance.currency }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{% trans "Інформація про Клієнта та Доставку" %}</h3>
+            </div>
+            <div class="p-6">
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">{% trans "Клієнт" %}:</dt>
+                        <dd class="text-gray-900 dark:text-gray-100">
+                            {% if order_instance.user %}
+                                <a href="{% url 'administration:user_detail_admin' order_instance.user.pk %}" class="text-yellow-600 hover:underline">{{ order_instance.user.get_full_name|default:order_instance.user.username }}</a>
+                            {% else %}
+                                {{ order_instance.first_name }} {{ order_instance.last_name }} (<em>{% trans "Гість" %}</em>)
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">Email:</dt>
+                        <dd class="text-gray-900 dark:text-gray-100">{{ order_instance.email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">{% trans "Телефон" %}:</dt>
+                        <dd class="text-gray-900 dark:text-gray-100">{{ order_instance.phone }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">{% trans "Адреса доставки" %}:</dt>
+                        <dd class="text-gray-900 dark:text-gray-100">
+                            {{ order_instance.address }}, {{ order_instance.city }}, {{ order_instance.zipcode }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-gray-500 dark:text-gray-400">{% trans "Метод оплати" %}:</dt>
+                        <dd class="text-gray-900 dark:text-gray-100">{{ order_instance.get_payment_method_display }}</dd>
+                    </div>
+                    {% if order_instance.stripe_payment_intent_id %}
+                        <div class="sm:col-span-2">
+                            <dt class="font-medium text-gray-500 dark:text-gray-400">Stripe Payment Intent ID:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100">{{ order_instance.stripe_payment_intent_id }}</dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{% trans "Товари в замовленні" %}</h3>
+            </div>
+            <div class="flow-root">
+                <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                    <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                        <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
+                            <thead class="bg-gray-50 dark:bg-gray-700/50">
+                                <tr>
+                                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-6">{% trans "Товар" %}</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">{% trans "Артикул" %}</th>
+                                    <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">{% trans "Ціна" %}</th>
+                                    <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 dark:text-gray-100">{% trans "К-сть" %}</th>
+                                    <th scope="col" class="py-3.5 pl-3 pr-4 text-right text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pr-6">{% trans "Сума" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                                {% for item in order_instance.items.all %}
+                                    <tr>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                            <div class="flex items-center">
+                                                <div class="h-10 w-10 flex-shrink-0">
+                                                    {% if item.product.get_thumbnail %}
+                                                        <img class="h-10 w-10 rounded-md object-cover" src="{{ item.product.get_thumbnail.url }}" alt="{{ item.product.name }}">
+                                                    {% else %}
+                                                        <div class="h-10 w-10 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="font-medium text-gray-900 dark:text-gray-100">
+                                                        <a href="{% url 'product:product_detail' item.product.slug %}" target="_blank" class="hover:text-yellow-600 dark:hover:text-yellow-400" title="{{ item.product.name }}">
+                                                            {{ item.product.name }}
+                                                        </a>
+                                                    </div>
+                                                    {% if item.product.category %}<div class="text-xs text-gray-500 dark:text-gray-400">{{ item.product.category.name }}</div>{% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">{{ item.product.sku|default:"-" }}</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-right">{{ item.price_at_purchase|floatformat:2 }}</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">{{ item.quantity }}</td>
+                                        <td class="whitespace-nowrap py-4 pl-3 pr-4 text-sm font-medium text-gray-900 dark:text-gray-100 text-right sm:pr-6">{{ item.get_total_price|floatformat:2 }} {{ order_instance.currency }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                                            {% trans "В цьому замовленні немає товарів." %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            {% if order_instance.items.all %}
+                                <tfoot class="bg-gray-50 dark:bg-gray-700/50">
+                                    <tr>
+                                        <th colspan="4" scope="row" class="py-3.5 pl-4 pr-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-6">{% trans "Підсумок" %}:</th>
+                                        <td class="py-3.5 pl-3 pr-4 text-right text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pr-6">{{ order_instance.total_price|floatformat:2 }} {{ order_instance.currency }}</td>
+                                    </tr>
+                                </tfoot>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{% trans "Історія та Зміна Статусу" %}</h3>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    {% trans "Тут може бути відображена історія змін статусу замовлення, якщо така логіка реалізована." %}
+                </p>
+                <form method="post" action="{% url 'administration:order_update' order_instance.pk %}" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label for="quick_status_update_v2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {% trans "Змінити статус на:" %}
+                        </label>
+                        <div class="flex rounded-md shadow-sm">
+                            <select id="quick_status_update_v2" name="status" class="form-select block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm rounded-l-md">
+                                {% for choice_val, choice_name in OrderStatusEnum_choices %}
+                                    <option value="{{ choice_val }}" {% if order_instance.status == choice_val %}selected{% endif %}>
+                                        {{ choice_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                <span>{% trans "Оновити" %}</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+{% endblock %}

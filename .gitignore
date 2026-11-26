@@ -1,0 +1,24 @@
+### Django ###
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+
+.vscode/
+media/
+
+.Dockerfile
+
+.env
+env/
+
+# local
+.env
+venv/
+.venv/
+node_modules/
+staticfiles/
+media/
+dump.rdb
+.DS_Store

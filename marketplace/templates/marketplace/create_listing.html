@@ -1,0 +1,169 @@
+{% extends 'core/main.html' %}
+{% load static %} {# Убедитесь, что static загружен, если будете использовать иконки из static #}
+
+{% block content %}
+    <div class="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-2 text-[var(--primary)] -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Створити нове оголошення
+                </h2>
+
+                <form method="post" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+
+                <!-- Назва -->
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Назва оголошення <span class="text-red-500">*</span></label>
+                        <input type="text" name="title" id="title" required
+                               placeholder="Наприклад, 'Електросамокат Xiaomi Mi Pro 2'"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition duration-150 ease-in-out">
+                    </div>
+
+                <!-- Опис -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Детальний опис <span class="text-red-500">*</span></label>
+                        <textarea name="description" id="description" required rows="4"
+                                  placeholder="Опишіть стан товару, причину продажу, комплектацію тощо..."
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition duration-150 ease-in-out"></textarea>
+                    </div>
+
+                <!-- Ціна та Валюта -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                        <div class="sm:col-span-2">
+                            <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Ціна <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <input type="number" name="price" id="price" required min="0" step="0.01"
+                                       placeholder="15000"
+                                       class="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition duration-150 ease-in-out">
+                                <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">₴/€/$</span> {# Подсказка #}
+                            </div>
+                        </div>
+                        <div>
+                            <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Валюта <span class="text-red-500">*</span></label>
+                            <select name="currency" id="currency" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition duration-150 ease-in-out bg-white">
+                                <option value="UAH" selected>UAH (₴)</option>
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                <!-- Категорія та Місто -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Категорія <span class="text-red-500">*</span></label>
+                            <select name="category" id="category" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition duration-150 ease-in-out bg-white">
+                                <option value="" disabled selected>Оберіть категорію...</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="city" class="block text-sm font-medium text-gray-700 mb-1">Місто <span class="text-red-500">*</span></label>
+                            <input type="text" name="city" id="city" required
+                                   placeholder="Наприклад, Київ"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition duration-150 ease-in-out">
+                        </div>
+                    </div>
+
+                <!-- Контактна інформація -->
+                    <div>
+                        <label for="contact_info" class="block text-sm font-medium text-gray-700 mb-1">Контактна інформація <span class="text-red-500">*</span></label>
+                        <input type="text" name="contact_info" id="contact_info" required
+                               placeholder="Ваш номер телефону або @username"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition duration-150 ease-in-out">
+                        <p class="mt-1 text-xs text-gray-500">Ця інформація буде видима іншим користувачам.</p>
+                    </div>
+
+                <!-- Завантаження зображень -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Зображення товару</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50 hover:bg-gray-100 transition">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600">
+                                    <label for="images" class="relative cursor-pointer bg-white rounded-md font-medium text-[var(--primary)] hover:text-[var(--accent)] focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[var(--primary)]">
+                                        <span>Завантажити файли</span>
+                                        <input id="images" name="images" type="file" multiple class="sr-only">
+                                    </label>
+                                    <p class="pl-1">або перетягніть сюди</p>
+                                </div>
+                                <p class="text-xs text-gray-500">PNG, JPG, GIF до 5MB кожен. Можна декілька.</p>
+                             {# --- Дополнительно: место для превью загруженных изображений (требует JS) --- #}
+                                <div id="image-preview-container" class="mt-4 flex flex-wrap gap-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                <!-- Кнопка відправки -->
+                    <div class="pt-4">
+                        <button type="submit" class="w-full flex justify-center py-3 px-6 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-[var(--primary)] hover:bg-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition duration-150 ease-in-out">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                            Опублікувати оголошення
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{# --- Опциональный JS для превью изображений --- #}
+    <script>
+        const imageInput = document.getElementById('images');
+        const previewContainer = document.getElementById('image-preview-container');
+
+        imageInput.addEventListener('change', function(event) {
+            previewContainer.innerHTML = ''; // Очищаем превью при новом выборе
+            const files = event.target.files;
+
+            if (files.length > 0) {
+            // Показываем контейнер или стилизуем его иначе, когда есть файлы
+                previewContainer.classList.add('border-t', 'pt-4', 'mt-4'); // Добавляем разделитель, если нужно
+            } else {
+                previewContainer.classList.remove('border-t', 'pt-4', 'mt-4');
+            }
+
+
+            for (const file of files) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        const div = document.createElement('div');
+                        div.classList.add('relative', 'w-20', 'h-20', 'rounded-md', 'overflow-hidden', 'border', 'border-gray-200');
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = file.name;
+                        img.classList.add('object-cover', 'w-full', 'h-full');
+                        div.appendChild(img);
+
+                    // Можно добавить кнопку удаления для превью (опционально)
+                    // const removeBtn = document.createElement('button');
+                    // ... (код для кнопки удаления) ...
+                    // div.appendChild(removeBtn);
+
+                        previewContainer.appendChild(div);
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                 // Показываем имя файла, если это не изображение
+                    const div = document.createElement('div');
+                    div.classList.add('text-xs', 'text-gray-500', 'p-1', 'bg-gray-100', 'rounded');
+                    div.textContent = `📄 ${file.name}`;
+                    previewContainer.appendChild(div);
+                }
+            }
+        });
+    </script>
+{% endblock %}

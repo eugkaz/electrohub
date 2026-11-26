@@ -1,0 +1,153 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Форум Спільноти - ElectroHub{% endblock %}
+
+{% block content %}
+    <div class="bg-gradient-to-b from-gray-50 via-gray-100 to-gray-50 min-h-screen">
+
+        {% if messages %}
+            <div id="messages-container" class="fixed top-5 right-5 z-[100] w-full max-w-sm space-y-3">
+                {% for message in messages %}
+                    {% with default_bg_color="bg-green-500" default_text_color="text-white" default_icon_svg='<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>' %}
+                        {% if "error" in message.tags or "danger" in message.tags %} {% with bg_color="bg-red-500" text_color="text-white" icon_svg='<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"></path>' %}{% endwith %}
+                        {% elif "warning" in message.tags %} {% with bg_color="bg-yellow-400" text_color="text-gray-900" icon_svg='<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path>' %}{% endwith %}
+                        {% elif "info" in message.tags %} {% with bg_color="bg-blue-500" text_color="text-white" icon_svg='<path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"></path>' %}{% endwith %}
+                        {% else %} {% with bg_color=default_bg_color text_color=default_text_color icon_svg=default_icon_svg %}{% endwith %}
+                        {% endif %}
+                        <div class="message-item flex items-start p-4 rounded-lg shadow-lg {{ bg_color }} {{ text_color }} opacity-0 animate-slideInDown" role="alert" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"> {{ icon_svg|safe }} </svg>
+                            <span class="flex-grow text-sm font-medium">{{ message }}</span>
+                            <button type="button" class="ml-3 -mr-1 -my-1 p-1 rounded-md hover:bg-black/10 focus:outline-none focus:ring-1 focus:ring-white" @click="show = false; $el.closest('.message-item')?.remove()"> <span class="sr-only">Закрити</span> <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"></path></svg> </button>
+                        </div>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+            <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        {% endif %}
+
+        <div class="bg-gradient-to-r from-gray-800 to-gray-900 py-10 md:py-16 border-b border-yellow-400/30 shadow-inner">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-yellow-100 to-yellow-400 mb-4 tracking-tight"> Форум Спільноти ElectroHub </h1>
+                <p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto"> Діліться досвідом, ставте запитання та знаходьте відповіді про електротранспорт. </p>
+                <form action="{% url 'search-result' %}" method="get" class="flex items-center gap-2 max-w-xl mx-auto bg-white/10 backdrop-blur-sm p-2 rounded-full border border-gray-700 focus-within:border-yellow-400 focus-within:ring-1 focus-within:ring-yellow-400 transition-all duration-300">
+                    <label for="forum-search-hero" class="sr-only">Пошук по форуму</label>
+                    <svg class="w-5 h-5 text-gray-400 ml-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /> </svg>
+                    <input type="search" name="q" id="forum-search-hero" class="flex-grow py-2 px-3 bg-transparent text-gray-100 focus:outline-none text-sm placeholder:text-gray-500 border-none ring-0" placeholder="Знайти тему або повідомлення..." value="{{ request.GET.q|default:'' }}">
+                    <button type="submit" class="px-5 py-2 rounded-full text-gray-900 font-semibold bg-yellow-400 hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-yellow-400 transition-colors duration-200 shadow-sm text-sm shrink-0"> Пошук </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+            <div class="lg:grid lg:grid-cols-12 lg:gap-10 xl:gap-12">
+
+                <main class="lg:col-span-8 xl:col-span-9 mb-10 lg:mb-0">
+                    <div class="bg-white p-5 sm:p-6 md:p-8 rounded-xl shadow-xl border border-gray-200/75">
+                        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 border-b border-gray-200 pb-4">
+                            <h2 class="text-2xl md:text-3xl font-bold text-gray-900"> Активні Обговорення </h2>
+                            <a href="{% url 'user-post' %}" class="hidden lg:inline-flex items-center px-4 py-2 bg-yellow-400 text-gray-900 text-sm font-semibold rounded-lg shadow-sm hover:bg-yellow-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 shrink-0 transform hover:scale-105">
+                                <svg class="w-5 h-5 mr-2 -ml-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"> <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /> </svg>
+                                Нова тема
+                            </a>
+                        </div>
+
+                        {% if page_obj %}
+                            <div class="flow-root">
+                                <ul class="-my-5 divide-y divide-gray-200">
+                                    {% for post in page_obj %}
+                                        <li class="flex flex-col sm:flex-row items-start gap-x-4 gap-y-2 py-5 hover:bg-yellow-50/30 transition duration-150 px-2 -mx-2 rounded-lg relative">
+                                            <div class="flex-shrink-0 mt-1">
+                                                {% with author_user=post.author.user %}
+                                                    {% with author_profile=author_user.profile|default:None %}
+                                                        {% with author_avatar=author_profile.avatar|default:None %}
+                                                            {% if author_avatar and author_avatar.url %}
+                                                                <img class="h-10 w-10 rounded-full object-cover bg-gray-200 ring-1 ring-gray-300" src="{{ author_avatar.url }}" alt="{{ author_user.username }}">
+                                                            {% else %}
+                                                                <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-300 ring-1 ring-gray-300" title="{{ author_user.username }}">
+                                                                    <span class="text-sm font-medium leading-none text-gray-600">{{ author_user.username|slice:":1"|upper }}</span>
+                                                                </span>
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    {% endwith %}
+                                                {% endwith %}
+                                            </div>
+
+                                            <div class="flex-grow min-w-0">
+                                                <h3 class="text-lg font-semibold text-gray-800 hover:text-yellow-700 transition-colors duration-200 leading-tight mb-1">
+                                                    <a href="{% url 'topic-detail' post.id %}" class="focus:outline-none">
+                                                        <span class="absolute inset-0 rounded-lg sm:hidden" aria-hidden="true"></span>
+                                                        {{ post.title }}
+                                                    </a>
+                                                </h3>
+                                                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                                                    <span>Автор: <span class="hover:text-yellow-600 font-medium">{{ post.author.user.get_full_name|default:post.author.user.username }}</span></span>
+                                                    <span class="text-gray-300">•</span>
+                                                    <span><time datetime="{{ post.date_created|date:"c" }}">{{ post.date_created|date:"d M Y" }}</time></span>
+                                                    {% if post.category %}
+                                                        <span class="text-gray-300">•</span>
+                                                        <span><a href="{% url 'category-detail' post.category.id %}" class="hover:text-yellow-600">{{ post.category.name }}</a></span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="w-full sm:w-auto flex-shrink-0 flex items-center justify-between sm:justify-end sm:flex-col sm:items-end gap-x-4 sm:gap-y-1 text-sm text-gray-600 pt-1 sm:pt-0 sm:text-right ml-0 sm:ml-4">
+                                                <div class="flex items-center gap-x-3">
+                                                    <span class="inline-flex items-center gap-1" title="Відповіді">
+                                                        <svg class="w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> </svg>
+                                                        {{ post.answer_count|default:0 }}
+                                                    </span>
+                                                    <span class="inline-flex items-center gap-1" title="Перегляди">
+                                                        <svg class="w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /> <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /> </svg>
+                                                        {{ post.topic_view_count|default:0 }}
+                                                    </span>
+                                                </div>
+                                                {% with last_reply=post.get_last_reply %}
+                                                    {% if last_reply %}
+                                                        <div class="text-xs text-gray-500 whitespace-nowrap mt-1 sm:mt-0">
+                                                            Ост. {{ last_reply.user.username }},
+                                                            <time datetime="{{ last_reply.date_created|date:"c" }}">{{ last_reply.date_created|timesince }} тому</time>
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="text-xs text-gray-500 whitespace-nowrap mt-1 sm:mt-0">
+                                                            Ще немає відповідей
+                                                        </div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            {% include 'forum/partials/pagination.html' with page_obj=page_obj paginator=paginator %}
+
+                        {% else %}
+                            <div class="text-center py-16 px-6 border border-dashed border-gray-300 rounded-lg">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.122 2.122l7.81-7.81a1.5 1.5 0 00-2.122-2.122z" /> </svg>
+                                <h3 class="mt-3 text-lg font-semibold text-gray-900">Поки що немає тем</h3>
+                                <p class="mt-1 text-sm text-gray-600">Будьте першим, хто створить обговорення!</p>
+                                <a href="{% url 'user-post' %}" class="mt-4 inline-flex items-center px-4 py-2 bg-yellow-400 text-gray-900 text-sm font-semibold rounded-lg shadow-sm hover:bg-yellow-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1">
+                                    Створити першу тему
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </main>
+
+                <aside class="lg:col-span-4 xl:col-span-3 space-y-8">
+                    <div class="lg:hidden">
+                        <a href="{% url 'user-post' %}" class="flex w-full items-center justify-center px-5 py-3 bg-yellow-400 text-gray-900 text-base font-semibold rounded-lg shadow-md hover:bg-yellow-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transform hover:scale-[1.02]">
+                            <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"> <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /> </svg>
+                            Створити нову тему
+                        </a>
+                    </div>
+                    {% include 'forum/partials/sidebar_categories.html' with categories=categories active_category=active_category %}
+                    {% include 'forum/partials/sidebar_latest_topics.html' with latest_topics=latest_topics %}
+                    {% include 'forum/partials/sidebar_stats.html' with total_topics=total_topics total_posts=total_posts total_users=total_users %}
+                </aside>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

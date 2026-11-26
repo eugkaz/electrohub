@@ -1,0 +1,44 @@
+{% load static %}
+<header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0">
+  <div>
+    <button @click="open = !open; localStorage.setItem('adminSidebarOpen', open)" class="text-gray-500 dark:text-gray-400 focus:outline-none focus:text-gray-700 dark:focus:text-gray-200 md:hidden" aria-label="Toggle sidebar">
+      <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+  </div>
+
+  <div class="flex items-center gap-3 sm:gap-4">
+    <a href="{% url 'frontpage' %}" target="_blank" title="Перейти на сайт" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors">
+      <span class="sr-only">Перейти на сайт</span>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+    </a>
+  </div>
+  <div class="flex items-center gap-3 sm:gap-4">
+    {% if request.user.is_authenticated %}
+      <a href="{% url 'myaccount' %}" class="flex items-center space-x-2 group" title="Мій кабінет">
+        <div
+          class="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-600 group-hover:border-yellow-400 transition-colors duration-300">
+          {% if request.user.profile.avatar %}
+            <img src="{{ request.user.profile.avatar.url }}" alt="Avatar" class="w-full h-full object-cover">
+          {% else %}
+            <svg class="w-full h-full text-gray-500 bg-gray-700" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          {% endif %}
+        </div>
+        <span
+          class="hidden lg:inline text-sm text-gray-700 font-medium group-hover:text-yellow-400 transition-colors duration-300">
+          {{ user.first_name|default:user.username }}
+        </span>
+      </a>
+    {% else %}
+      <a href="{% url 'login' %}" title="Увійти / Зареєструватися"
+         class="text-gray-700 hover:text-yellow-400 transition-colors duration-300">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </a>
+    {% endif %}
+  </div>
+</header>

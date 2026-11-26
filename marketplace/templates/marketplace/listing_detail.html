@@ -1,0 +1,1330 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+{% load custom_filters %}
+
+{% block title %}{{ listing.title }} - {{ listing.category.name|default:_("Оголошення") }} | ElectoHub{% endblock %}
+
+{% block extra_json_data %}
+    <script id="listing_modal_data_script" type="application/json">
+        {
+            "images": [
+                {% if listing.main_image %}
+                    { "src": "{{ listing.main_image.url }}", "alt": "{{ listing.title|escapejs }} - {% trans 'Головне фото' %}" }
+                    {% if listing.additional_images.all %},{% endif %}
+                {% endif %}
+                {% for img_obj in listing.additional_images.all %}
+                    { "src": "{{ img_obj.image.url }}", "alt": "{{ img_obj.alt_text|default:listing.title|escapejs }} - {% trans 'Фото' %} {% if listing.main_image %}{{ forloop.counter0|add:2 }}{% else %}{{ forloop.counter0|add:1 }}{% endif %}" }
+                    {% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            "details": {
+                "title": "{{ listing.title|escapejs }}",
+                "price": "{{ listing.price|floatformat:"-2"|intcomma }}",
+                "currencySymbol": "{{ listing.currency_symbol|escapejs }}",
+                "listingUrl": "{% url 'listing_detail' listing.pk %}",
+                "features": [
+                    {% for feature in listing.features.all %}
+                        { "name": "{{ feature.name|escapejs }}", "value": "{{ feature.value|escapejs }}" }
+                        {% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }
+        }
+    </script>
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root { --primary: #facc15; --accent: #eab308; }
+
+    /* --- Swiper Gallery Styles (без изменений) --- */
+        .gallery-container { position: relative; }
+        .main-swiper-container { position: relative; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); background-color: #f1f5f9; }
+        .main-swiper { width: 100%; cursor: grab; min-height: 350px; background-color: transparent; }
+        .main-swiper .swiper-slide { display: flex; justify-content: center; align-items: center; background-color: transparent; overflow: hidden; }
+        .main-swiper .swiper-slide img { display: block; width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; max-height: 70vh; }
+        .open-modal-btn { position: absolute; top: 0.75rem; right: 0.75rem; width: 36px; height: 36px; background-color: rgba(17, 24, 39, 0.5); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity 0.2s ease, background-color 0.2s ease; z-index: 20; border: none; padding: 0; }
+        .main-swiper-container:hover .open-modal-btn { opacity: 0.8; }
+        .open-modal-btn:hover { background-color: rgba(17, 24, 39, 0.8); opacity: 1;}
+        .thumbnail-swiper { height: 80px; padding: 6px 0; margin-top: 0.75rem; position: relative;}
+        .thumbnail-swiper .swiper-slide { width: 70px; height: 70px; border-radius: 0.5rem; overflow: hidden; opacity: 0.6; transition: opacity 0.2s ease, border-color 0.2s ease; cursor: pointer; border: 3px solid transparent; }
+        .thumbnail-swiper .swiper-slide:hover { opacity: 1; }
+        .thumbnail-swiper .swiper-slide-thumb-active { opacity: 1; border-color: var(--primary); }
+        .thumbnail-swiper .swiper-slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        .gallery-container .swiper-button-prev, .gallery-container .swiper-button-next { position: absolute; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background-color: rgba(255, 255, 255, 0.7); backdrop-filter: blur(3px); border-radius: 50%; color: #374151; transition: all 0.2s ease; z-index: 10; margin-top: -16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); opacity: 0; pointer-events: none; }
+        .gallery-container:hover .swiper-button-prev, .gallery-container:hover .swiper-button-next { opacity: 1; pointer-events: auto; }
+        .gallery-container .swiper-button-prev:hover, .gallery-container .swiper-button-next:hover { background-color: #fff; color: #000; transform: translateY(-50%) scale(1.05); }
+        .gallery-container .swiper-button-prev::after, .gallery-container .swiper-button-next::after { font-size: 14px; font-weight: 900; }
+        .gallery-container .swiper-button-prev { left: 0.75rem; }
+        .gallery-container .swiper-button-next { right: 0.75rem; }
+        .main-swiper .swiper-pagination { bottom: 12px !important; z-index: 10; transition: opacity 0.2s ease; opacity: 0;}
+        .gallery-container:hover .main-swiper .swiper-pagination { opacity: 1; }
+        .main-swiper .swiper-pagination-bullet { background-color: rgba(0, 0, 0, 0.25); width: 8px; height: 8px; opacity: 0.9; transition: background-color 0.2s ease; }
+        .main-swiper .swiper-pagination-bullet-active { background-color: var(--primary); transform: scale(1.1); }
+        .sold-badge { position: absolute; top: 0.75rem; left: 0.75rem; background-color: #dc2626; color: white; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; z-index: 15; letter-spacing: 0.05em; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .image-modal-overlay { position: fixed; inset: 0; background-color: rgba(17, 24, 39, 0.92); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 15px; cursor: zoom-out; }
+        .image-modal-gallery-container { display: flex; background-color: #ffffff; width: 95vw; height: 90vh; max-width: 1800px; max-height: 1000px; border-radius: 0.75rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); overflow: hidden; position: relative; cursor: default; }
+        .modal-thumbnails-column { width: 100px; padding: 12px 8px; overflow-y: auto; background-color: #f8fafc; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f8fafc; }
+        .modal-thumbnails-column::-webkit-scrollbar { width: 6px; }
+        .modal-thumbnails-column::-webkit-scrollbar-track { background: #f8fafc; }
+        .modal-thumbnails-column::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        .modal-thumbnail-item { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 0.375rem; cursor: pointer; border: 3px solid transparent; transition: border-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease; opacity: 0.65; }
+        .modal-thumbnail-item:hover { opacity: 1; transform: scale(1.03); }
+        .modal-thumbnail-item.active { border-color: var(--primary); opacity: 1; transform: scale(1.03); }
+        .modal-main-image-column { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; background-color: #1f2937; padding: 12px; overflow: hidden; }
+        .modal-main-image-content { display: block; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0.25rem; }
+        .modal-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background-color: rgba(30, 41, 59, 0.5); color: white; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s ease, transform 0.2s ease; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .modal-nav-btn:hover { background-color: rgba(30, 41, 59, 0.8); transform: translateY(-50%) scale(1.05); }
+        .modal-nav-btn.prev { left: 16px; }
+        .modal-nav-btn.next { right: 16px; }
+        .modal-image-counter { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background-color: rgba(17, 24, 39, 0.7); color: white; padding: 6px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: 500; z-index: 10; line-height: 1; }
+        .modal-info-column { width: 350px; flex-shrink: 0; padding: 24px; overflow-y: auto; background-color: #ffffff; border-left: 1px solid #e5e7eb; font-size: 0.9rem; color: #4b5563; scrollbar-width: thin; scrollbar-color: #cbd5e1 #ffffff; }
+        .modal-info-column::-webkit-scrollbar { width: 6px; }
+        .modal-info-column::-webkit-scrollbar-track { background: #ffffff; }
+        .modal-info-column::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        .modal-info-title { font-size: 1.5rem; font-weight: 700; color: #111827; margin-bottom: 0.75rem; line-height: 1.3; }
+        .modal-info-price { font-size: 1.875rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem; }
+        .modal-info-subtitle { font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #374151; margin-top: 1.25rem; margin-bottom: 0.75rem; }
+        .modal-info-features { list-style: none; padding: 0; margin: 0; font-size: 0.875rem; }
+        .modal-info-features li { margin-bottom: 0.625rem; display: flex; justify-content: space-between; gap: 0.75rem; padding-bottom: 0.625rem; border-bottom: 1px solid #f3f4f6; }
+        .modal-info-features li:last-child { border-bottom: none; margin-bottom: 0; }
+        .modal-info-features li strong { color: #1f2937; flex-shrink: 0; }
+        .modal-info-features li span { color: #4b5563; word-break: break-word; }
+        .image-modal-content { max-width: 90vw; max-height: 90vh; display: block; object-fit: contain; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border-radius: 8px; cursor: default; }
+        .image-modal-close-btn { position: fixed; top: 20px; right: 20px; background-color: rgba(255, 255, 255, 0.15); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10001; transition: background-color 0.2s, transform 0.2s; backdrop-filter: blur(3px); }
+        .image-modal-close-btn:hover { background-color: rgba(255, 255, 255, 0.3); transform: scale(1.1) rotate(90deg); }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; }
+        .feature-item { display: flex; align-items: center; padding: 0.75rem 1rem; background-color: #f8fafc; border-radius: 0.5rem; border: 1px solid #f1f5f9; }
+        .feature-item .icon { flex-shrink: 0; margin-right: 0.75rem; color: var(--primary); width: 1.25rem; height: 1.25rem; }
+        .feature-item .name { font-size: 0.875rem; font-weight: 500; color: #4b5563; margin-right: 0.5rem; }
+        .feature-item .value { font-size: 0.875rem; font-weight: 600; color: #1f2937; }
+
+    /* --- Chat Styles (без изменений) --- */
+        .chat-popup { position: fixed; bottom: 20px; right: 20px; width: 360px; max-height: calc(100vh - 40px); background-color: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; z-index: 1000; transition: opacity 0.3s, height 0.3s ease, width 0.3s ease; border: 1px solid #e5e7eb; }
+        .chat-popup.is-dragging { transition: none; box-shadow: 0 15px 40px rgba(0,0,0,0.25); }
+        .chat-header { background-color: var(--primary); color: #422006; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--accent); flex-shrink: 0; cursor: grab; }
+        .chat-header .user-info { display: flex; align-items: center; gap: 10px; min-width: 0; flex-grow: 1; }
+        .chat-header .user-info img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(66, 32, 6, 0.2); flex-shrink: 0; background-color: #fff; }
+        .chat-header .user-details { display: flex; flex-direction: column; overflow: hidden; }
+        .chat-header .user-details h3 { font-weight: 600; font-size: 0.9rem; margin: 0; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-header .user-status { font-size: 0.7rem; line-height: 1; opacity: 0.8; }
+        .chat-header .user-status.online { color: #16a34a; font-weight: 500; }
+        .chat-header .user-status.offline { color: rgba(66, 32, 6, 0.7); }
+        .chat-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .chat-size-btn, .chat-hide-btn { background: none; border: none; color: #422006; font-size: 1rem; cursor: pointer; padding: 0; line-height: 1; opacity: 0.7; transition: opacity 0.2s; }
+        .chat-size-btn:hover, .chat-hide-btn:hover { opacity: 1; }
+        .chat-close-btn { background: none; border: none; color: #422006; font-size: 1.4rem; cursor: pointer; padding: 0; line-height: 1; opacity: 0.7; transition: opacity 0.2s; flex-shrink: 0;}
+        .chat-close-btn:hover { opacity: 1; }
+        .chat-popup.minimized { height: 48px !important; width: 250px !important; overflow: hidden; }
+        .chat-popup.minimized .chat-messages, .chat-popup.minimized .chat-input-area-wrapper { display: none; }
+        .chat-messages { flex-grow: 1; padding: 12px 16px; overflow-y: auto; background-color: #f9fafb; display: flex; flex-direction: column; gap: 12px; }
+        .chat-message-wrapper { display: flex; gap: 8px; align-items: flex-end; max-width: 90%; position: relative; }
+        .chat-message-wrapper.sent { flex-direction: row-reverse; align-self: flex-end; }
+        .chat-message-wrapper.received { align-self: flex-start; }
+        .chat-message-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-bottom: 20px; background-color: #e5e7eb; }
+        .chat-message-content-wrapper { display: flex; flex-direction: column; max-width: 100%; }
+        .chat-message-sender-name { font-size: 0.75rem; font-weight: 600; color: #4b5563; margin-bottom: 2px; }
+        .chat-message-wrapper.sent .chat-message-sender-name { text-align: right; color: rgba(66, 32, 6, 0.9); }
+        .chat-message-wrapper.received .chat-message-sender-name { text-align: left; }
+        .chat-message { padding: 8px 14px; border-radius: 16px; font-size: 0.9rem; line-height: 1.45; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .chat-message p { margin: 0; word-wrap: break-word; white-space: pre-wrap; }
+        .chat-message p a, .chat-message .image-caption a { color: inherit; text-decoration: underline; }
+        .chat-message p a:hover, .chat-message .image-caption a:hover { opacity: 0.8; }
+        .sent .chat-message p a { color: #3730a3; }
+        .received .chat-message p a { color: #1d4ed8; }
+        .chat-message.sent { background-color: var(--primary); color: #422006; border-bottom-right-radius: 4px; }
+        .chat-message.received { background-color: #e5e7eb; color: #1f2937; border-bottom-left-radius: 4px; }
+        .chat-message img.attached-image { max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 5px; margin-bottom: 5px; cursor: zoom-in; object-fit: cover; display: block; }
+        .chat-message .image-caption { font-size: 0.8rem; color: inherit; opacity: 0.8; margin-top: 4px; white-space: pre-wrap; word-wrap: break-word; }
+        .message-meta { font-size: 0.7rem; margin-top: 5px; text-align: right; opacity: 0.9; }
+        .sent .message-meta { color: rgba(66, 32, 6, 0.8); }
+        .received .message-meta { color: #6b7280; text-align: left; }
+        .chat-message.deleted-message p { font-style: italic; color: #6b7280; }
+        .chat-message.deleted-message { background-color: #f3f4f6 !important; color: #6b7280 !important; border: 1px dashed #d1d5db; }
+        .edited-marker { font-size: 0.7rem; color: inherit; opacity: 0.7; margin-left: 5px; display: inline; }
+        .message-actions { display: flex; gap: 5px; align-items: center; opacity: 0; transition: opacity 0.2s ease-in-out; position: absolute; bottom: 2px; }
+        .chat-message-wrapper:hover .message-actions { opacity: 1; }
+        .chat-message-wrapper.sent .message-actions { left: -35px; }
+        .chat-message-wrapper.received .message-actions { display: none; }
+        .action-btn { background: none; border: none; cursor: pointer; color: #9ca3af; font-size: 0.8rem; padding: 2px; }
+        .action-btn.delete-btn:hover { color: #ef4444; }
+        .action-btn.edit-btn:hover { color: var(--accent); }
+        .edit-message-area { width: 100%; margin-bottom: 5px; }
+        .edit-input { width: 100%; margin-bottom: 5px; max-height: 100px; border: 1px solid var(--accent) !important; border-radius: 8px !important; padding: 8px 12px !important; font-size: 0.9rem; white-space: pre-wrap; }
+        .edit-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+        .chat-input-area-wrapper { padding: 10px 12px; border-top: 1px solid #e5e7eb; background-color: #fff; flex-shrink: 0;}
+        .chat-image-preview-container { padding: 8px; border: 1px dashed #d1d5db; border-radius: 8px; margin-bottom: 8px; background-color: #f9fafb; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .chat-image-preview-container img { max-height: 50px; border-radius: 4px; display: block; }
+        .chat-image-preview-container button { font-size: 0.75rem; color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px; line-height: 1; }
+        .chat-image-preview-container button:hover { text-decoration: underline; }
+        .chat-input-area { display: flex; align-items: center; gap: 8px; }
+        .chat-attach-btn { background: none; border: none; color: #6b7280; cursor: pointer; padding: 6px; transition: color 0.2s; flex-shrink: 0; }
+        .chat-attach-btn:hover { color: var(--accent); }
+        .chat-attach-btn i { font-size: 1.2rem; display: block; }
+        .chat-input { flex-grow: 1; border: 1px solid #d1d5db; border-radius: 20px; padding: 8px 16px; font-size: 0.9rem; outline: none; resize: none; transition: border-color 0.2s, box-shadow 0.2s; max-height: 90px; overflow-y: auto; white-space: pre-wrap; }
+        .chat-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.3); }
+        .chat-send-btn { background: none; border: none; color: var(--primary); cursor: pointer; padding: 6px; transition: color 0.2s; flex-shrink: 0; }
+        .chat-send-btn:hover { color: var(--accent); }
+        .chat-send-btn:disabled { color: #9ca3af; cursor: not-allowed; }
+        .chat-send-btn i { font-size: 1.3rem; display: block; }
+        .chat-loading, .chat-error { text-align: center; padding: 25px; color: #6b7280; font-size: 0.9rem; }
+        .btn { display: inline-flex; justify-content: center; align-items: center; padding: 0.75rem 1.5rem; font-size: 0.875rem; font-weight: 600; border-radius: 0.6rem; transition: all 0.2s ease; cursor: pointer; text-align: center; border: 1px solid transparent; line-height: 1.25rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); }
+        .btn-primary { background-color: var(--primary); color: #422006; }
+        .btn-primary:hover { background-color: var(--accent); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); transform: translateY(-1px);}
+        .btn-secondary { background-color: #fff; color: #374151; border-color: #d1d5db; }
+        .btn-secondary:hover { background-color: #f9fafb; border-color: #9ca3af; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
+        .btn-xs { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+        .chat-list-item { display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; }
+        [x-cloak] { display: none !important; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-100 min-h-screen" x-data="pageComponent()" x-init="init()">
+        {% csrf_token %} {# CSRF токен для Alpine.js/fetch запросов, если нужно #}
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <nav class="mb-6 text-sm text-gray-500" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-2">
+                    <li class="inline-flex items-center"><a href="{% url 'marketplace-view' %}" class="hover:text-[var(--primary)] transition">{% trans "Приватні продажі" %}</a></li>
+                    {% if listing.category %}
+                        <li><div class="flex items-center"><svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m1 9 4-4-4-4"/></svg><a href="{{ listing.category.get_absolute_url }}" class="hover:text-[var(--primary)] transition ms-1 md:ms-2">{{ listing.category.name }}</a></div></li>
+                    {% endif %}
+                    <li aria-current="page"><div class="flex items-center"><svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m1 9 4-4-4-4"/></svg><span class="ms-1 md:ms-2 font-medium text-gray-700">{{ listing.title|truncatechars:45 }}</span></div></li>
+                </ol>
+            </nav>
+
+            <div class="lg:grid lg:grid-cols-12 lg:gap-x-8 xl:gap-x-12">
+            {# --- Ліва колонка: Галерея та Опис --- #}
+                <div class="lg:col-span-7 xl:col-span-8 mb-8 lg:mb-0">
+                    <div class="bg-white shadow-xl rounded-xl overflow-hidden p-3 sm:p-4 border border-gray-200/75 mb-8"
+                         x-data="swiperGallery()"
+                         x-init="initSwipers()"
+                         @destroy="destroy()">
+                        {% with all_additional_images=listing.additional_images.all %} {# Переименовал для ясности #}
+                            {% if listing.main_image or all_additional_images %}
+                                <div class="gallery-container">
+                                    <div class="main-swiper-container">
+                                        <div class="swiper main-swiper" x-ref="mainSwiperEl">
+                                            <div class="swiper-wrapper">
+                                                {% if listing.main_image %}
+                                                    <div class="swiper-slide">
+                                                        <img src="{{ listing.main_image.url }}" alt="{{ listing.title }} - {% trans 'Головне фото' %}" loading="lazy" @click="openListingImageModal(0)">
+                                                    </div>
+                                                {% endif %}
+                                                {% for img_obj in all_additional_images %}
+                                                    <div class="swiper-slide">
+                                                        <img src="{{ img_obj.image.url }}" alt="{{ img_obj.alt_text|default:listing.title }} - {% trans 'Фото' %} {% if listing.main_image %}{{ forloop.counter0|add:2 }}{% else %}{{ forloop.counter0|add:1 }}{% endif %}" loading="lazy" @click="openListingImageModal({% if listing.main_image %}{{ forloop.counter0|add:"1" }}{% else %}{{ forloop.counter0 }}{% endif %})">
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            <div class="swiper-pagination"></div>
+                                            {% if listing.status == 'sold' %}<div class="sold-badge">{% trans "Продано" %}</div>{% endif %}
+                                        </div>
+                                        <button type="button" @click="openListingImageModal(mainSwiperInstance.realIndex !== undefined ? mainSwiperInstance.realIndex : mainSwiperInstance.activeIndex)" class="open-modal-btn" title="{% trans 'Відкрити на повний екран' %}" x-show="mainSwiperInstance && mainSwiperInstance.slides.length > 0">
+                                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6"></path></svg>
+                                        </button>
+                                    {# Отображаем кнопки навигации Swiper только если слайдов больше одного #}
+                                        {% if listing.main_image and all_additional_images|length > 0 or all_additional_images|length > 1 %}
+                                            <div class="swiper-button-prev !w-8 !h-8"></div>
+                                            <div class="swiper-button-next !w-8 !h-8"></div>
+                                        {% endif %}
+                                    </div>
+                                {# Отображаем thumbnails Swiper только если слайдов больше одного #}
+                                    {% if listing.main_image and all_additional_images|length > 0 or all_additional_images|length > 1 %}
+                                        <div class="swiper thumbnail-swiper" x-ref="thumbSwiperEl">
+                                            <div class="swiper-wrapper px-1">
+                                                {% if listing.main_image %}<div class="swiper-slide"><img src="{{ listing.main_image.url }}" alt="{% trans 'Мініатюра головного' %}"></div>{% endif %}
+                                                {% for img_obj in all_additional_images %}<div class="swiper-slide"><img src="{{ img_obj.image.url }}" alt="{% trans 'Мініатюра' %} {% if listing.main_image %}{{ forloop.counter0|add:2 }}{% else %}{{ forloop.counter0|add:1 }}{% endif %}"></div>{% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="flex items-center justify-center aspect-[16/10] bg-slate-100 rounded-lg text-slate-400"><svg class="w-16 h-16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><span class="ml-2">{% trans "Немає фото" %}</span></div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <div class="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200/75">
+                        <div class="px-5 py-4 sm:px-6 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-900">{% trans "Опис та Характеристики" %}</h2>
+                        </div>
+                        <div class="p-5 sm:p-6">
+                            <div class="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed mb-8">
+                                {{ listing.description|linebreaksbr }}
+                            </div>
+                            {% with features=listing.features.all %}
+                                {% if features %}
+                                    <h3 class="text-base font-semibold text-gray-800 mb-3">{% trans "Характеристики" %}:</h3>
+                                    <div class="features-grid">
+                                        {% for feature in features %}
+                                            <div class="feature-item">
+                                                {% if feature.icon_svg %}<span class="icon">{{ feature.icon_svg|safe }}</span>{% else %}<span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>{% endif %}
+                                                <div><span class="name">{{ feature.name }}:</span> <span class="value">{{ feature.value }}</span></div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+
+            {# --- Права колонка: Інформація про продавця, ціна, дії --- #}
+                <div class="lg:col-span-5 xl:col-span-4">
+                    <div class="sticky top-24 bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200/75">
+                        <div class="p-5 sm:p-6">
+                            <div class="flex justify-between items-center mb-3">
+                                {% if listing.category %}
+                                    <a href="{{ listing.category.get_absolute_url }}" class="inline-block bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-md hover:bg-yellow-200 transition">{{ listing.category.name }}</a>
+                                {% endif %}
+                             {# Кнопка "Избранное" для основного объявления. is_favorite передается из контекста listing_detail #}
+                                {% if request.user.is_authenticated %}
+                                    {% include 'marketplace/partials/favorite_button_listing.html' with listing=listing is_favorite=is_favorite source='listing_detail' %}
+                                {% endif %}
+                            </div>
+                            <h1 class="text-2xl font-bold text-gray-900 mb-1 leading-tight">{{ listing.title }}</h1>
+                            <p class="text-xs text-gray-400 mb-4">ID: {{ listing.pk }}</p>
+
+                            <div class="mb-4 pb-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+                                <div class="flex items-baseline gap-x-1.5">
+                                    <span class="text-3xl font-extrabold text-[var(--primary)]">{{ listing.price|floatformat:"-2"|intcomma }}</span>
+                                    <span class="text-xl font-semibold text-gray-700">{{ listing.currency_symbol }}</span>
+                                </div>
+                                {% if listing.is_negotiable %}
+                                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{% trans "Торг можливий" %}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="space-y-2.5 text-sm mb-5 border-b border-gray-100 pb-4">
+                                <div class="flex items-center text-gray-600"> <i class="fa-solid fa-tag w-4 text-center mr-2 text-gray-400"></i> {% trans "Стан" %}: <strong class="ml-1.5 font-medium text-gray-800">{{ listing.get_condition_display }}</strong> </div>
+                                <div class="flex items-center text-gray-600"> <i class="fa-solid fa-location-dot w-4 text-center mr-2 text-gray-400"></i> <strong class="ml-1.5 font-medium text-gray-800">{{ listing.city }}</strong> </div>
+                                {% if listing.brand or listing.model_name or listing.year_of_manufacture %}
+                                    <div class="flex items-center text-gray-600"> <i class="fa-solid fa-circle-info w-4 text-center mr-2 text-gray-400"></i> <strong class="ml-1.5 font-medium text-gray-800"> {{ listing.brand|default:"" }}{% if listing.brand and listing.model_name %} / {% endif %}{{ listing.model_name|default:"" }}{% if listing.year_of_manufacture %} ({{ listing.year_of_manufacture }}){% endif %} </strong> </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="border-t border-gray-100 pt-5">
+                                <h3 class="text-sm font-semibold text-gray-600 mb-3">{% trans "Продавець" %}</h3>
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <a href="{% url 'user_profile_view' listing.user.username %}" class="flex-shrink-0" title="{% trans 'Профіль' %} {{ listing.user.username }}">
+                                        {% if listing.user.profile.avatar %}
+                                            <img class="h-11 w-11 rounded-full object-cover border-2 border-white ring-1 ring-gray-200 bg-gray-100" src="{{ listing.user.profile.avatar.url }}" alt="{{ listing.user.username }}">
+                                        {% else %}
+                                            <div class="h-11 w-11 rounded-full flex items-center justify-center bg-[var(--primary)] text-white text-lg font-bold">
+                                                {{ listing.user.username|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                    </a>
+                                    <div>
+                                        <div class="text-sm font-semibold text-gray-900 hover:text-[var(--primary)] transition">
+                                            <a href="{% url 'user_profile_view' listing.user.username %}">
+                                                {{ listing.contact_name|default:listing.user.get_full_name|default:listing.user.username }}
+                                            </a>
+                                        </div>
+                                        <div class="text-xs text-gray-500">{% trans "На сайті з" %} {{ listing.user.date_joined|date:"M Y" }}</div>
+                                    </div>
+                                </div>
+                                <p class="text-gray-700 text-sm mb-5"><strong class="font-medium text-gray-500">{% trans "Контакт" %}:</strong> <a href="tel:{{ listing.contact_info }}" class="text-[var(--primary)] hover:underline font-semibold">{{ listing.contact_info }}</a></p>
+
+                                <div class="flex flex-col gap-3">
+                                    {% if listing.status != 'sold' %}
+                                        {% if not is_listing_owner %}
+                                            <a href="tel:{{ listing.contact_info }}" class="btn w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+                                                <i class="fas fa-phone fa-fw mr-2"></i> {% trans "Подзвонити" %}
+                                            </a>
+                                            {% if can_chat %}
+                                                <button type="button" id="start-chat-btn"
+                                                        @click="if(window.alpineChatInstance) window.alpineChatInstance.startChatFromButton('{{ listing.pk }}', '{{ chat_room_id|default:'' }}'); else console.error('Chat instance not ready')"
+                                                        class="btn btn-primary w-full">
+                                                    <i class="fas fa-comments fa-fw mr-2"></i> {% trans "Написати продавцю" %}
+                                                </button>
+                                            {% endif %}
+                                        {% else %} {# Владелец объявления #}
+                                            {% if owner_chats %}
+                                                <p class="text-sm font-medium text-gray-700 mb-2">{% trans "Ваші чати за цим оголошенням:" %}</p>
+                                                <ul class="space-y-1 max-h-40 overflow-y-auto border-t border-b border-gray-100 py-2">
+                                                    {% for chat_item in owner_chats %}
+                                                        <li class="chat-list-item">
+                                                            <span class="text-sm text-gray-800"><i class="fas fa-user mr-1.5 text-gray-400"></i> {{ chat_item.buyer.get_full_name|default:chat_item.buyer.username }}</span>
+                                                            <button type="button" @click="if(window.alpineChatInstance) window.alpineChatInstance.startChatFromButton('{{ listing.pk }}', '{{ chat_item.id }}'); else console.error('Chat instance not ready')" class="btn btn-primary btn-xs !px-2 !py-1">{% trans "Відкрити" %}</button>
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                <p class="text-sm text-center text-gray-500 italic py-3">{% trans "Ще немає повідомлень." %}</p>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %} {# Объявление продано #}
+                                        <button type="button" disabled class="btn w-full bg-gray-300 text-gray-500 cursor-not-allowed"><i class="fas fa-ban mr-2"></i> {% trans "Продано" %} </button>
+                                        {% if is_listing_owner and owner_chats %}
+                                            <p class="text-sm font-medium text-gray-700 mb-2 mt-3 border-t pt-3">{% trans "Історія чатів:" %}</p>
+                                            <ul class="space-y-1 max-h-40 overflow-y-auto border-b border-gray-100 pb-2">
+                                                {% for chat_item in owner_chats %}
+                                                    <li class="chat-list-item">
+                                                        <span class="text-sm text-gray-800"><i class="fas fa-user mr-1.5 text-gray-400"></i> {{ chat_item.buyer.get_full_name|default:chat_item.buyer.username }}</span>
+                                                        <button type="button" @click="if(window.alpineChatInstance) window.alpineChatInstance.startChatFromButton('{{ listing.pk }}', '{{ chat_item.id }}'); else console.error('Chat instance not ready')" class="btn btn-secondary btn-xs !px-2 !py-1">{% trans "Перегляд" %}</button>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 border-t border-gray-200 px-5 sm:px-6 py-3">
+                            <div class="flex items-center justify-between text-xs text-gray-500 flex-wrap gap-x-4 gap-y-1">
+                                <span>{% trans "Опубл." %}: <time datetime="{{ listing.created_at.isoformat }}">{{ listing.created_at|date:"d M Y" }}</time></span>
+                                <span><i class="far fa-eye mr-1 opacity-75"></i> {{ listing.views_count }}</span>
+                            </div>
+                            {% if is_listing_owner %}
+                                <div class="mt-3 pt-3 border-t border-gray-200 flex gap-3">
+                                    <a href="{% url 'listing_edit' listing.pk %}" class="btn btn-secondary btn-sm flex-1">
+                                        <i class="fas fa-edit mr-1.5"></i> {% trans "Редагувати" %}
+                                    </a>
+                                    <a href="{% url 'listing_delete' listing.pk %}" class="btn btn-secondary btn-sm flex-1 !border-red-300 !text-red-600 hover:!bg-red-50">
+                                        <i class="fas fa-trash-alt mr-1.5"></i> {% trans "Видалити" %}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if related_listings %}
+                <div class="mt-12 lg:mt-16">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">{% trans "Схожі оголошення" %}</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                        {% for rel_listing_item in related_listings %}
+                     {# Передаем словарь favorite_status (который содержит статусы для похожих) как favorite_status_dict #}
+                            {% include 'marketplace/partials/listing_card.html' with listing=rel_listing_item request=request favorite_status_dict=favorite_status source='related' %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+
+    {# --- Чат Popup --- #}
+        <div id="chat-popup" class="chat-popup"
+             x-data="chatApp()" x-init="init()"
+             x-show="isOpen" x-cloak
+             :class="{ 'minimized': isMinimized, 'is-dragging': isDragging }"
+             :style="isDragging ? { transform: `translate(${chatPopupEl.dataset.translateX || 0}px, ${chatPopupEl.dataset.translateY || 0}px)` } : {}">
+            <div class="chat-header" @mousedown="startDrag($event)">
+                <div class="user-info">
+                    <img :src="opponent.avatarUrl || defaultAvatar" alt="Avatar">
+                    <div class="user-details">
+                        <h3 x-text="opponent.displayName || '{% trans "Співрозмовник" %}'"></h3>
+                        <span class="user-status"
+                              :class="{ 'online': opponent.isOnline, 'offline': !opponent.isOnline }"
+                              x-text="opponent.isOnline ? '{% trans "в мережі" %}' : '{% trans "не в мережі" %}'">
+                        </span>
+                    </div>
+                </div>
+                <div class="chat-controls">
+                    <button @click="confirmHideChat()" class="chat-hide-btn" title="{% trans 'Приховати чат' %}" x-show="roomId && !isMinimized">
+                        <i class="fas fa-eye-slash"></i>
+                    </button>
+                    <button @click="toggleSize()" class="chat-size-btn" :title="isMinimized ? '{% trans "Розгорнути чат" %}' : '{% trans "Згорнути чат" %}'">
+                        <i class="fas" :class="isMinimized ? 'fa-window-maximize' : 'fa-minus'"></i>
+                    </button>
+                    <button @click="closeChat()" class="chat-close-btn" aria-label="{% trans 'Закрити чат' %}"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="chat-messages" x-ref="messageArea">
+                <template x-if="isLoading"><div class="chat-loading"><i class="fas fa-spinner fa-spin mr-2"></i> {% trans "Завантаження..." %}</div></template>
+                <template x-if="error && !isLoading"><div class="chat-error" x-text="error"></div></template>
+
+                <template x-for="message in messages" :key="message.id || (message.timestamp + message.sender_id + (message.content ? message.content.slice(0,5) : 'img') + (message.image_url || '') + message.is_deleted_by_sender + message.is_edited)">
+                    <div class="chat-message-wrapper" :class="message.sender_id == currentUserId ? 'sent' : 'received'" :data-message-id="message.id">
+                        <img :src="message.sender_avatar_url || defaultAvatar" alt="Sender avatar" class="chat-message-avatar">
+                        <div class="chat-message-content-wrapper">
+                            <span class="chat-message-sender-name" x-text="message.sender_display_name || '{% trans "Невідомо" %}'" x-show="message.sender_id != currentUserId"></span>
+
+                        <!-- Блок для редактирования сообщения -->
+                            <template x-if="message.is_being_edited && message.sender_id == currentUserId">
+                                <div class="edit-message-area">
+                                    <textarea x-model="editingMessageContent" class="chat-input edit-input" rows="2"
+                                              @keydown.escape.prevent="cancelEditMessage(message.id)"
+                                              @keydown.enter.prevent="($event.metaKey || $event.ctrlKey || $event.shiftKey) ? editingMessageContent+='\n' : saveEditedMessage(message.id)"
+                                              x-init="$nextTick(() => { if($el.offsetParent) $el.focus(); })"
+                                    ></textarea>
+                                    <div class="edit-actions">
+                                        <button @click="cancelEditMessage(message.id)" class="btn btn-xs btn-secondary !py-1 !px-2">{% trans "Скасувати" %}</button>
+                                        <button @click="saveEditedMessage(message.id)" class="btn btn-xs btn-primary !py-1 !px-2">{% trans "Зберегти" %}</button>
+                                    </div>
+                                </div>
+                            </template>
+
+                        <!-- Основной блок отображения сообщения -->
+                            <template x-if="!message.is_being_edited || message.sender_id != currentUserId">
+                                <div class="chat-message" :class="[message.sender_id == currentUserId ? 'sent' : 'received', {'deleted-message': message.is_deleted_by_sender}]">
+                                    <template x-if="message.is_deleted_by_sender">
+                                        <p>{% trans "[Повідомлення видалено]" %}</p>
+                                    </template>
+                                <!-- Используем явное условие вместо x-else -->
+
+                                    <template x-if="!message.is_deleted_by_sender">
+                                        <template x-if="message.message_type === 'text'">
+                                            <p x-html="linkify(message.content)"></p>
+                                        </template>
+                                        <template x-if="message.message_type === 'image'">
+                                            <img :src="message.image_url" alt="{% trans 'Прикріплене зображення' %}" class="attached-image" @click="openImageInModal(message.image_url)">
+                                            <p x-show="message.content && String(message.content).trim() !== ''" x-html="linkify(message.content)" class="image-caption"></p>
+                                        </template>
+                                        <span x-show="message.is_edited && !message.is_deleted_by_sender" class="edited-marker">({% trans "ред." %})</span>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <div class="message-meta" x-text="formatTimestamp(message.timestamp)"></div>
+                        </div>
+                        <div class="message-actions" x-show="message.sender_id == currentUserId && !message.is_deleted_by_sender && !message.is_being_edited && canPerformAction(message.timestamp)">
+                            <button @click="startEditMessage(message.id)" class="action-btn edit-btn" title="{% trans 'Редагувати' %}">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button @click="confirmDeleteMessage(message.id)" class="action-btn delete-btn" title="{% trans 'Видалити повідомлення' %}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="chat-input-area-wrapper">
+                <template x-if="imageToSendPreview">
+                    <div class="chat-image-preview-container">
+                        <img :src="imageToSendPreview" alt="Preview">
+                        <button type="button" @click="clearImageToSend()">
+                            <i class="fas fa-times mr-1"></i> {% trans "Скасувати" %}
+                        </button>
+                    </div>
+                </template>
+                <form @submit.prevent="sendMessage()" class="chat-input-area">
+                    <input type="file" x-ref="chatImageInput" @change="handleImageFileSelected($event)" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
+                    <button type="button" @click="$refs.chatImageInput.click()" class="chat-attach-btn" title="{% trans 'Прикріпити фото' %}">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <textarea x-model="newMessage" placeholder="{% trans 'Ваше повідомлення...' %}" class="chat-input"
+                              @keydown.enter.prevent="($event.metaKey || $event.ctrlKey || $event.shiftKey) ? (newMessage += '\n') : sendMessage()"
+                              @input="adjustTextareaHeight($event.target)"
+                              style="overflow-y: hidden; height: auto; min-height: 38px;"
+                              rows="1"
+                    ></textarea>
+                    <button type="submit" :disabled="(!newMessage.trim() && !imageToSend) || isLoading" class="chat-send-btn" title="{% trans 'Надіслати' %} (Enter)">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    {# --- Модальное окно для изображений (без изменений) --- #}
+        <div x-show="$store.imageModal.isOpen" class="image-modal-overlay" @click.self="$store.imageModal.close()" @keydown.escape.window="$store.imageModal.close()" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+            <div class="image-modal-gallery-container" x-show="$store.imageModal.isGalleryMode" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" @click.stop>
+                <div class="modal-thumbnails-column" x-show="$store.imageModal.images.length > 1">
+                    <template x-for="(image, index) in $store.imageModal.images" :key="image.src + '-' + index + '-thumb'">
+                        <img :src="image.src" :alt="image.alt || 'Thumbnail ' + (index + 1)" @click="$store.imageModal.setImage(index)" :class="{ 'active': index === $store.imageModal.currentIndex }" class="modal-thumbnail-item" loading="lazy">
+                    </template>
+                </div>
+                <div class="modal-main-image-column">
+                    <button @click="$store.imageModal.prevImage()" class="modal-nav-btn prev" x-show="$store.imageModal.images.length > 1" aria-label="{% trans 'Попереднє зображення' %}"><i class="fas fa-chevron-left"></i></button>
+                    <img :src="$store.imageModal.currentImage.src" :alt="$store.imageModal.currentImage.alt" class="modal-main-image-content" :key="$store.imageModal.currentImage.src + $store.imageModal.currentIndex + '-main'">
+                    <button @click="$store.imageModal.nextImage()" class="modal-nav-btn next" x-show="$store.imageModal.images.length > 1" aria-label="{% trans 'Наступне зображення' %}"><i class="fas fa-chevron-right"></i></button>
+                    <div class="modal-image-counter" x-show="$store.imageModal.images.length > 0"><span x-text="$store.imageModal.currentIndex + 1"></span> / <span x-text="$store.imageModal.images.length"></span></div>
+                </div>
+                <div class="modal-info-column">
+                    <h3 x-text="$store.imageModal.listingDetails.title" class="modal-info-title"></h3>
+                    <div class="modal-info-price"><span x-text="$store.imageModal.listingDetails.price"></span><span x-text="$store.imageModal.listingDetails.currencySymbol" class="ml-1"></span></div>
+                    <hr class="my-3 border-gray-200" x-show="$store.imageModal.listingDetails.features.length > 0">
+                    <h4 x-show="$store.imageModal.listingDetails.features.length > 0" class="modal-info-subtitle">{% trans "Характеристики" %}:</h4>
+                    <ul class="modal-info-features" x-show="$store.imageModal.listingDetails.features.length > 0">
+                        <template x-for="feature in $store.imageModal.listingDetails.features" :key="feature.name + '-feat'">
+                            <li><strong x-text="feature.name + ':'"></strong><span x-text="feature.value" class="text-right"></span></li>
+                        </template>
+                    </ul>
+                    <a :href="$store.imageModal.listingDetails.listingUrl" target="_blank" class="modal-info-link btn btn-sm btn-secondary w-full mt-6"><i class="fas fa-external-link-alt mr-2"></i> {% trans "Перейти до оголошення" %}</a>
+                </div>
+            </div>
+            <img :src="$store.imageModal.currentImage.src" alt="{% trans 'Збільшене зображення' %}" class="image-modal-content" @click.stop x-show="!$store.imageModal.isGalleryMode" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" :key="$store.imageModal.currentImage.src + '-simple-modal'">
+            <button @click="$store.imageModal.close()" class="image-modal-close-btn" aria-label="{% trans 'Закрити' %}"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('imageModal', {
+            // ... (код imageModal без изменений)
+                isOpen: false, images: [], currentIndex: 0,
+                listingDetails: { title: '', price: '', currencySymbol: '', features: [], listingUrl: '' },
+                isGalleryMode: false,
+                get currentImage() { return this.images[this.currentIndex] || {src: null, alt: ''}; },
+                open(data, indexOrDetails, detailsIfGallery) {
+                    if (typeof data === 'string') { // Open single image
+                        this.images = [{ src: data, alt: `{% trans "Збільшене зображення" %}` }]; this.currentIndex = 0;
+                        this.listingDetails = { title: '', price: '', currencySymbol: '', features: [], listingUrl: '' }; this.isGalleryMode = false;
+                    } else if (Array.isArray(data) && typeof indexOrDetails === 'number' && typeof detailsIfGallery === 'object') { // Open gallery
+                        this.images = data.map(img => ({...img})); this.currentIndex = indexOrDetails;
+                        this.listingDetails = {...detailsIfGallery, features: Array.isArray(detailsIfGallery.features) ? detailsIfGallery.features.map(f => ({...f})) : [] };
+                        this.isGalleryMode = true;
+                    } else { console.error('Invalid arguments for imageModal.open'); return; }
+                    this.isOpen = true; document.body.style.overflow = 'hidden';
+                },
+                close() {
+                    this.isOpen = false; setTimeout(() => {
+                        this.images = []; this.currentIndex = 0;
+                        this.listingDetails = { title: '', price: '', currencySymbol: '', features: [], listingUrl: '' };
+                        this.isGalleryMode = false;
+                    }, 300); document.body.style.overflow = '';
+                },
+                nextImage() { if (this.images.length > 0) { this.currentIndex = (this.currentIndex + 1) % this.images.length; } },
+                prevImage() { if (this.images.length > 0) { this.currentIndex = (this.currentIndex - 1 + this.images.length) % this.images.length; } },
+                setImage(index) { if (index >= 0 && index < this.images.length) { this.currentIndex = index; } }
+            });
+
+            Alpine.data('pageComponent', () => ({ init() { console.log("Page component initialized."); } }));
+
+            Alpine.data('swiperGallery', function () {
+             // ... (код swiperGallery без изменений)
+                return {
+                    mainSwiperInstance: null, thumbSwiperInstance: null, listingModalData: null,
+                    initSwipers() {
+                        this.$nextTick(() => {
+                            const mainEl = this.$refs.mainSwiperEl; const thumbEl = this.$refs.thumbSwiperEl;
+                            const galleryContainer = mainEl ? mainEl.closest('.gallery-container') : null;
+                            if (typeof Swiper === 'undefined') { console.error("Swiper not loaded"); return; }
+                            try {
+                                const dataElement = document.getElementById('listing_modal_data_script');
+                                if (dataElement && dataElement.textContent.trim()) {
+                                    this.listingModalData = JSON.parse(dataElement.textContent);
+                                    if (!Array.isArray(this.listingModalData.images)) this.listingModalData.images = [];
+                                    if (this.listingModalData.details && !Array.isArray(this.listingModalData.details.features)) this.listingModalData.details.features = [];
+                                } else {
+                                    this.listingModalData = { images: [], details: { title: `{{ listing.title|escapejs|default:_("Заголовок") }}`, price: `{{ listing.price|floatformat:"-2"|intcomma|default:"0" }}`, currencySymbol: `{{ listing.currency_symbol|escapejs|default:"₴" }}`, features: [], listingUrl: `{% url "listing_detail" listing.pk %}`}};
+                                    {% if listing.main_image %}this.listingModalData.images.push({src: '{{ listing.main_image.url }}', alt: 'Main'});{% endif %}
+                                    {% for img_obj in listing.additional_images.all %}this.listingModalData.images.push({src: '{{ img_obj.image.url }}', alt: 'Additional'});{% endfor %}
+                                }
+                            } catch (e) { console.error('Error parsing listing_modal_data:', e); this.listingModalData = { images: [], details: { title: `{{ listing.title|escapejs|default:_("Заголовок") }}`, price: `{{ listing.price|floatformat:"-2"|intcomma|default:"0" }}`, currencySymbol: `{{ listing.currency_symbol|escapejs|default:"₴" }}`, features: [], listingUrl: `{% url "listing_detail" listing.pk %}`}}; }
+                            if (thumbEl) { try { this.thumbSwiperInstance = new Swiper(thumbEl, { spaceBetween: 8, slidesPerView: 'auto', freeMode: true, watchSlidesProgress: true, centerInsufficientSlides: true, threshold: 5 }); } catch (e) { console.error("Thumb Swiper Error:", e); }}
+                            if (mainEl && galleryContainer) {
+                                const slideCount = mainEl.querySelectorAll('.swiper-slide').length;
+                                try {
+                                    this.mainSwiperInstance = new Swiper(mainEl, {
+                                        loop: slideCount > 1,
+                                        spaceBetween: 0,
+                                        navigation: { nextEl: galleryContainer.querySelector('.swiper-button-next'), prevEl: galleryContainer.querySelector('.swiper-button-prev') },
+                                        pagination: { el: mainEl.querySelector('.swiper-pagination'), clickable: true },
+                                        thumbs: { swiper: this.thumbSwiperInstance },
+                                        keyboard: { enabled: true },
+                                        grabCursor: true,
+                                        observer: true,
+                                        observeParents: true,
+                                    });
+                                } catch (e) { console.error("Main Swiper Error:", e); }
+                            }
+                        });
+                    },
+                    openListingImageModal(clickedImageIndex) {
+                        if (this.listingModalData && this.listingModalData.images && Array.isArray(this.listingModalData.images) && this.listingModalData.images.length > 0) {
+                            const index = Math.max(0, Math.min(clickedImageIndex, this.listingModalData.images.length - 1));
+                            this.$store.imageModal.open( this.listingModalData.images, index, this.listingModalData.details );
+                        } else {
+                            const currentSlideImg = this.mainSwiperInstance?.slides[this.mainSwiperInstance?.realIndex !== undefined ? this.mainSwiperInstance.realIndex : (this.mainSwiperInstance?.activeIndex || 0)]?.querySelector('img');
+                            if (currentSlideImg && currentSlideImg.src) { this.$store.imageModal.open(currentSlideImg.src); }
+                            else { console.warn("No image data available for modal."); }
+                        }
+                    },
+                    destroy() { if (this.mainSwiperInstance?.destroy) { this.mainSwiperInstance.destroy(true, true); } if (this.thumbSwiperInstance?.destroy) { this.thumbSwiperInstance.destroy(true, true); } }
+                };
+            });
+
+            Alpine.data('chatApp', function() {
+                return {
+                    isOpen: false, isLoading: false, error: null, messages: [], newMessage: '',
+                    roomId: null, listingIdProp: null, listingId: null,
+                    websocket: null, currentUserId: '{{ request.user.id|stringformat:"s"|default:"" }}',
+                    defaultAvatar: "{% static 'images/default_avatar.png' %}",
+                    opponent: { id: null, displayName: `{% trans "Співрозмовник" %}`, avatarUrl: "{% static 'images/default_avatar.png' %}", isOnline: false },
+                    imageToSend: null, imageToSendPreview: null, isMinimized: false,
+                    editingMessageId: null, editingMessageContent: '', messageActionTimeLimit: 3600,
+                    isDragging: false, dragStartX: 0, dragStartY: 0,
+                    chatPopupEl: null, chatPopupInitialTransformX: 0, chatPopupInitialTransformY: 0,
+                    boundDoDrag: null, boundStopDrag: null,
+
+                    init() {
+                        window.alpineChatInstance = this;
+                        this.chatPopupEl = this.$el;
+                        this.boundDoDrag = this.doDrag.bind(this);
+                        this.boundStopDrag = this.stopDrag.bind(this);
+                        console.log('Chat app initialized. Current User ID:', this.currentUserId);
+                        this.$watch('newMessage', (value) => {
+                            this.$nextTick(() => {
+                                const textarea = this.chatPopupEl.querySelector('.chat-input');
+                                if(textarea) this.adjustTextareaHeight(textarea);
+                            });
+                        });
+                    },
+                    adjustTextareaHeight(textarea) {
+                        textarea.style.height = 'auto';
+                        let newHeight = textarea.scrollHeight;
+                        const maxHeight = 90;
+                        if (newHeight > maxHeight) {
+                            newHeight = maxHeight;
+                            textarea.style.overflowY = 'auto';
+                        } else {
+                            textarea.style.overflowY = 'hidden';
+                        }
+                        textarea.style.height = newHeight + 'px';
+                    },
+                    getCsrfToken() { return document.querySelector('input[name=csrfmiddlewaretoken]')?.value || ''; },
+
+                    startChatFromButton(listingPk, chatRoomId) {
+                        console.log(`Attempting to start chat from button: listingPk=${listingPk}, chatRoomId=${chatRoomId}`);
+                        this.listingIdProp = String(listingPk);
+                        this._startChatInternal(chatRoomId ? String(chatRoomId) : null);
+                    },
+
+                    _startChatInternal(existingRoomId) {
+                        if (!this.currentUserId) {
+                            alert(`{% trans "Будь ласка, увійдіть, щоб почати чат." %}`);
+                            return;
+                        }
+                        const currentListingId = this.listingIdProp;
+
+                        if (this.isOpen && this.roomId === existingRoomId && this.listingId === currentListingId && !this.isMinimized) {
+                            console.log("Chat already open for this room and listing.");
+                            return;
+                        }
+                        if (this.isMinimized && this.roomId === existingRoomId && this.listingId === currentListingId) {
+                            this.toggleSize();
+                            return;
+                        }
+
+                        console.log(`Starting chat for listing: ${currentListingId}, room: ${existingRoomId || 'new'}`);
+                        this.listingId = currentListingId;
+                        this.isOpen = true; this.isLoading = true; this.error = null; this.messages = [];
+                        this.clearImageToSend(); if (this.isMinimized) this.isMinimized = false;
+
+                        if (this.websocket && (this.roomId !== existingRoomId || (this.websocket.url && !this.websocket.url.includes(this.roomId || '---never-match---')))) {
+                            console.log("Closing old WS connection. Old Room URL:", this.websocket.url, "Target Room ID:", existingRoomId);
+                            this.websocket.onclose = null;
+                            this.websocket.close(1000, "Switching chat room");
+                            this.websocket = null;
+                        }
+
+                        this.opponent = { id: null, displayName: `{% trans "Завантаження..." %}`, avatarUrl: this.defaultAvatar, isOnline: false };
+                        this.editingMessageId = null; this.editingMessageContent = '';
+                        this.resetChatPosition();
+
+                        if (existingRoomId && existingRoomId !== 'None' && String(existingRoomId).trim() !== '') {
+                            this.roomId = existingRoomId;
+                            console.log("Existing room ID provided:", this.roomId);
+                            this.loadInitialMessages();
+                        } else {
+                            this.roomId = null;
+                            console.log("No existing room ID, attempting to create/get new one for listing:", this.listingId);
+                            const csrfToken = this.getCsrfToken();
+                            if (!csrfToken) {
+                                this.error = `{% trans "Помилка CSRF. Неможливо почати чат." %}`; this.isLoading = false; return;
+                            }
+                            const listingIdForUrl = parseInt(this.listingId, 10);
+                            if (isNaN(listingIdForUrl) || listingIdForUrl <= 0) {
+                                this.error = `{% trans "Невірний ID оголошення для початку чату." %}`; this.isLoading = false; console.error("Invalid listingId for URL:", this.listingId); return;
+                            }
+                            const url = `{% url 'start_chat' listing_id=0 %}`.replace('/0/', `/${listingIdForUrl}/`);
+                            fetch(url, {
+                                method: 'POST',
+                                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
+                                body: JSON.stringify({})
+                            })
+                                .then(res => {
+                                    if (!res.ok) { return res.json().then(err => Promise.reject(err.message || err.detail || `HTTP error ${res.status}`));}
+                                    return res.json();
+                                })
+                                .then(data => {
+                                    if (data.status === 'success' && data.room_id) {
+                                        this.roomId = String(data.room_id);
+                                        console.log("New room created/fetched, ID:", this.roomId);
+                                        this.loadInitialMessages();
+                                    } else {
+                                        throw new Error(data.message || `{% trans "Не вдалося почати чат." %}`);
+                                    }
+                                })
+                                .catch(err => {
+                                    this.error = (typeof err === 'string' ? err : err.message) || `{% trans "Помилка старту чату." %}`;
+                                    console.error("Error starting chat:", err);
+                                    this.isLoading = false;
+                                });
+                        }
+                    },
+
+                    loadInitialMessages() {
+                        if (!this.roomId) {
+                            this.error = `{% trans "Немає ID кімнати для завантаження повідомлень." %}`; this.isLoading = false; console.error("loadInitialMessages: No Room ID."); return;
+                        }
+                        this.isLoading = true;
+                        console.log("Loading messages for room:", this.roomId);
+                        const url = `{% url 'get_chat_messages' room_id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', this.roomId);
+                        fetch(url)
+                            .then(res => {
+                                if (!res.ok) { return res.json().then(err => Promise.reject(err.message || err.detail || `HTTP error ${res.status}`));}
+                                return res.json();
+                            })
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    this.messages = (data.messages || []).map(m => ({
+                                        ...m,
+                                        sender_id: String(m.sender_id),
+                                        sender_avatar_url: m.sender_avatar_url || this.defaultAvatar,
+                                        sender_display_name: m.sender_display_name || `{% trans "Невідомо" %}`,
+                                        is_being_edited: false,
+                                    }));
+                                    this.opponent = {
+                                        id: String(data.opponent_id),
+                                        displayName: data.opponent_username || `{% trans "Співрозмовник" %}`,
+                                        avatarUrl: data.opponent_avatar_url || this.defaultAvatar,
+                                        isOnline: data.opponent_is_online || false
+                                    };
+                                    console.log("Messages loaded. Opponent:", this.opponent.displayName, "Messages count:", this.messages.length);
+                                    this.error = null;
+                                    this.connectWebSocket();
+                                } else {
+                                    throw new Error(data.message || `{% trans "Помилка завантаження повідомлень." %}`);
+                                }
+                            })
+                            .catch(err => {
+                                this.error = (typeof err === 'string' ? err : err.message) || `{% trans "Помилка завантаження." %}`;
+                                console.error("Error loading initial messages:", err);
+                            })
+                            .finally(() => { this.isLoading = false; this.$nextTick(() => this.scrollToBottom()); });
+                    },
+
+                    connectWebSocket() {
+                        if (!this.roomId) { console.warn("WS: No Room ID for connection. Aborting."); return; }
+
+                        if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+                            if (this.websocket.url && this.websocket.url.includes(this.roomId)) {
+                                console.log("WS already connected to room:", this.roomId);
+                                this.websocket.send(JSON.stringify({ type: 'user_active_in_room' }));
+                                this.$nextTick(() => this.scrollToBottom());
+                                return;
+                            } else {
+                                console.log("WS connected to a different room. Closing old one:", this.websocket.url);
+                                this.websocket.onclose = null;
+                                this.websocket.close(1000, "Switching to a new room");
+                                this.websocket = null;
+                            }
+                        }
+                        if (this.websocket && this.websocket.readyState !== WebSocket.CLOSED && this.websocket.readyState !== WebSocket.CLOSING) {
+                            console.log("WS exists but not OPEN (state: " + this.websocket.readyState + "). Forcing close to reconnect.");
+                            this.websocket.onclose = null;
+                            this.websocket.close(1000, "Forced close for reconnection");
+                            this.websocket = null;
+                        }
+
+                        const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+                        const wsPath = `${wsScheme}://${window.location.host}/ws/chat/${this.roomId}/`;
+                        console.log("Attempting WS connection to:", wsPath);
+                        try {
+                            this.websocket = new WebSocket(wsPath);
+                            const currentWebsocket = this.websocket;
+
+                            currentWebsocket.onopen = () => {
+                                if (currentWebsocket !== this.websocket) { console.log("WS: onopen called for an old socket instance. Ignoring."); return; }
+                                this.error = null;
+                                console.log("WS Connected successfully to room: " + this.roomId);
+                                currentWebsocket.send(JSON.stringify({ type: 'user_active_in_room' }));
+                                this.$nextTick(() => this.scrollToBottom());
+                            };
+                            currentWebsocket.onmessage = (e) => {
+                                if (currentWebsocket === this.websocket) { this.handleWsMessage(e); }
+                                else { console.log("WS: onmessage received for an old socket instance. Ignoring.");}
+                            };
+                            currentWebsocket.onerror = (e) => {
+                                if (currentWebsocket === this.websocket && this.isOpen) { this.error = `{% trans "Помилка WebSocket з'єднання." %}`; }
+                                console.error("WS Error for room " + (this.roomId || 'UNKNOWN') + ":", e);
+                            };
+                            currentWebsocket.onclose = (e) => {
+                                const closedSocketRoomId = e.target.url.split('/').slice(-2, -1)[0];
+                                console.log(`WS Closed (For Room: ${closedSocketRoomId}, Current Alpine Room: ${this.roomId}, Target URL: ${e.target.url}, Code: ${e.code}, Reason: '${e.reason}', Clean: ${e.wasClean})`);
+
+                                if (currentWebsocket === this.websocket) {
+                                    this.websocket = null;
+                                    if (!e.wasClean && this.isOpen && this.roomId === closedSocketRoomId && ![1000, 1001, 1005].includes(e.code) ) {
+                                        this.error = `{% trans "З'єднання втрачено. Спроба перепідключення..." %}`;
+                                        console.log("WS unclean close, attempting reconnect in 3-5s for room:", this.roomId);
+                                        setTimeout(() => {
+                                            if (this.isOpen && this.roomId === closedSocketRoomId && !this.websocket) {
+                                                console.log("Reconnecting WS for room:", this.roomId);
+                                                this.connectWebSocket();
+                                            } else {
+                                                console.log("WS Reconnect aborted. Conditions not met (chat closed, room changed, or already reconnected).");
+                                            }
+                                        }, 3000 + Math.random() * 2000);
+                                    } else {
+                                        console.log("WS closed (cleanly or chat not for this room/not open). No automatic reconnect.");
+                                    }
+                                } else {
+                                    console.log("WS: onclose called for an old/mismatched socket instance. Current Alpine room:", this.roomId, "Socket's room:", closedSocketRoomId);
+                                }
+                            };
+                        } catch (err) {
+                            if (this.isOpen) this.error = `{% trans "Не вдалося підключитися до WebSocket." %}`;
+                            this.websocket = null;
+                            console.error("WS Initialization failed for room " + (this.roomId || 'UNKNOWN') + ":", err);
+                        }
+                    },
+
+                    handleWsMessage(event) {
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log("[WS Received] Full data object from server:", JSON.stringify(data));
+
+                            if (data.type === 'chat_message_broadcast') {
+                                console.log("[WS Received] 'chat_message_broadcast'. Message part (data.message):", JSON.stringify(data.message));
+                                const receivedMessage = data.message;
+
+                                if (!receivedMessage || typeof receivedMessage.id === 'undefined' ) {
+                                    console.error("[WS Error] Received message (data.message) is malformed or 'id' is missing:", receivedMessage);
+                                    return;
+                                }
+                                let messageType = 'text';
+                                if (receivedMessage.hasOwnProperty('message_type') && typeof receivedMessage.message_type === 'string') {
+                                    messageType = receivedMessage.message_type;
+                                } else {
+                                    console.warn(`[WS Warn] 'message_type' missing or not a string in received message. ID: ${receivedMessage.id}. Defaulting to 'text'. Received:`, receivedMessage.message_type);
+                                }
+
+                                const newMessageData = {
+                                    id: receivedMessage.id,
+                                    sender_id: String(receivedMessage.sender_id),
+                                    sender_display_name: receivedMessage.sender_display_name || `{% trans "Невідомо" %}`,
+                                    sender_avatar_url: receivedMessage.sender_avatar_url || this.defaultAvatar,
+                                    content: receivedMessage.content || "",
+                                    timestamp: receivedMessage.timestamp,
+                                    message_type: messageType,
+                                    image_url: receivedMessage.image_url || null,
+                                    is_edited: receivedMessage.is_edited || false,
+                                    is_deleted_by_sender: receivedMessage.is_deleted_by_sender || false,
+                                    is_being_edited: false
+                                };
+
+                                console.log("[JS Processed] Full newMessageData for display:", JSON.stringify(newMessageData, null, 2));
+
+                                const existingMsgIndex = this.messages.findIndex(m => m.id === newMessageData.id);
+                                if (existingMsgIndex === -1) {
+                                    this.messages.push(newMessageData);
+                                    console.log("[JS Info] Message pushed to this.messages. Current messages count:", this.messages.length);
+                                    this.$nextTick(() => this.scrollToBottom());
+                                } else {
+                                    console.log("[JS Info] Duplicate message ID received, potentially updating:", newMessageData.id);
+                                }
+
+                            } else if (data.type === 'user_status_update') {
+                                console.log("[WS Received] 'user_status_update':", data);
+                                if (this.opponent && String(data.user_id) === String(this.opponent.id)) {
+                                    this.opponent.isOnline = data.is_online;
+                                }
+                            } else if (data.type === 'error_message') {
+                                this.error = data.message;
+                                console.error("[WS Error from server]", data.message);
+                            } else if (data.type === 'chat_message_deleted') {
+                                console.log("[WS Received] 'chat_message_deleted':", data);
+                                const msgIndex = this.messages.findIndex(m => m.id === data.message_id);
+                                if (msgIndex > -1) {
+                                    this.messages[msgIndex].is_deleted_by_sender = true;
+                                }
+                            } else if (data.type === 'chat_message_edited') {
+                                console.log("[WS Received] 'chat_message_edited':", data);
+                                const msgIndex = this.messages.findIndex(m => m.id === data.message_id);
+                                if (msgIndex > -1) {
+                                    this.messages[msgIndex].content = data.new_content;
+                                    this.messages[msgIndex].is_edited = data.is_edited_flag;
+                                    if (this.editingMessageId === data.message_id) {
+                                        this.cancelEditMessage(data.message_id);
+                                    }
+                                }
+                            } else {
+                                console.warn("[WS Received] Unknown message type from server:", data.type, "Full data:", data);
+                            }
+                        } catch (e) {
+                            console.error("WS Parse or Handle Error in handleWsMessage:", e, "Raw data:", event.data);
+                        }
+                    },
+                    linkify(text) { // РЕКОМЕНДОВАННАЯ ВЕРСИЯ
+                        console.log("LINKIFY CALLED WITH:", JSON.stringify(text));
+                        if (text === null || typeof text === 'undefined' || String(text).trim() === '') {
+                            console.log("LINKIFY RETURNING: empty string (input was null, undefined, or empty)");
+                            return '';
+                        }
+
+                        let S = String(text);
+
+                        const escapeHtml = (unsafe) => {
+                            return unsafe
+                                .replace(/&/g, "&")
+                                .replace(/</g, "<")
+                                .replace(/>/g, ">")
+                                .replace(/"/g, " ")
+                                .replace(/'/g, "'");
+                        };
+
+                        const linkRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
+
+                        let result = '';
+                        let lastIndex = 0;
+                        let match;
+
+                        while ((match = linkRegex.exec(S)) !== null) {
+                            result += escapeHtml(S.substring(lastIndex, match.index));
+                            const matchedUrl = match[1];
+                            const matchedEmail = match[3];
+
+                            if (matchedUrl) {
+                                result += `<a href="${matchedUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(matchedUrl)}</a>`;
+                            } else if (matchedEmail) {
+                                result += `<a href="mailto:${matchedEmail}">${escapeHtml(matchedEmail)}</a>`;
+                            }
+                            lastIndex = linkRegex.lastIndex;
+                        }
+                        result += escapeHtml(S.substring(lastIndex));
+                        result = result.replace(/\n/g, '<br>');
+
+                        console.log("LINKIFY RETURNING:", JSON.stringify(result));
+                        return result;
+                    },
+
+                    async sendMessage() {
+                    // ... (код sendMessage без изменений, как в предыдущем ответе)
+                        const textMessage = this.newMessage.trim();
+                        console.log("[SendMessage] Attempting to send. Raw newMessage:", `"${this.newMessage}"`, "Trimmed textMessage:", `"${textMessage}"`, "Image to send:", this.imageToSend ? "Exists" : "None");
+
+                        if (!textMessage && !this.imageToSend) {
+                            console.log("[SendMessage] Send cancelled: No text and no image.");
+                            return;
+                        }
+                        if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) {
+                            this.error = `{% trans "Немає з'єднання." %}`;
+                            if (this.roomId) this.connectWebSocket();
+                            return;
+                        }
+                        this.isLoading = true;
+
+                        if (this.imageToSend) {
+                            const formData = new FormData();
+                            formData.append('image', this.imageToSend);
+                            formData.append('room_id', this.roomId);
+                            if (textMessage) {
+                                formData.append('caption', textMessage);
+                                console.log("[SendMessage] Appending caption to FormData:", textMessage);
+                            }
+                            try {
+                                const response = await fetch(`{% url 'chat_upload_image' %}`, {
+                                    method: 'POST',
+                                    headers: { 'X-CSRFToken': this.getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
+                                    body: formData
+                                });
+                                const responseData = await response.json();
+                                if (!response.ok) {
+                                    throw new Error(responseData.message || responseData.detail || `{% trans "HTTP помилка при завантаженні файлу." %}`);
+                                }
+                                console.log("[SendMessage] Image uploaded successfully via HTTP:", responseData);
+                                this.newMessage = '';
+                                this.clearImageToSend();
+                            } catch (e) {
+                                console.error("[SendMessage] Image Send Error:", e);
+                            }
+                        } else if (textMessage) {
+                            try {
+                                const payload = { type: 'text_message_from_client', content: textMessage };
+                                console.log("[SendMessage] Sending via WS payload:", JSON.stringify(payload));
+                                this.websocket.send(JSON.stringify(payload));
+                                this.newMessage = '';
+                            } catch (e) {
+                                console.error("[SendMessage] WS Send Error:", e);
+                            }
+                        }
+                        this.$nextTick(() => this.adjustTextareaHeight(this.chatPopupEl.querySelector('.chat-input')));
+                        this.isLoading = false;
+                    },
+                // ... (остальные методы: handleImageFileSelected, clearImageToSend, resetChatPosition, scrollToBottom, formatTimestamp, openImageInModal, toggleSize, closeChat, confirmHideChat, hideChatRoom, canPerformAction, confirmDeleteMessage, deleteMessage, startEditMessage, cancelEditMessage, saveEditedMessage, startDrag, doDrag, stopDrag - без изменений, как в предыдущем ответе)
+                    handleImageFileSelected(event) {
+                        const file = event.target.files[0]; if (!file) return;
+                        if (file.size > 5*1024*1024) { this.error = `{% trans "Файл зображення має бути менше 5MB." %}`; this.clearImageToSend(); return; }
+                        if (!['image/jpeg','image/png','image/gif','image/webp'].includes(file.type)) { this.error = `{% trans "Непідтримуваний тип файлу зображення." %}`; this.clearImageToSend(); return; }
+                        this.imageToSend = file;
+                        const reader = new FileReader();
+                        reader.onload = (e) => { this.imageToSendPreview = e.target.result; };
+                        reader.readAsDataURL(file);
+                        this.error = null;
+                        if (event.target) event.target.value = null;
+                    },
+                    clearImageToSend() {
+                        this.imageToSend = null;
+                        this.imageToSendPreview = null;
+                        if (this.$refs.chatImageInput) this.$refs.chatImageInput.value = null;
+                    },
+                    resetChatPosition() {
+                        if (this.chatPopupEl) {
+                            this.chatPopupEl.style.transform = '';
+                            this.chatPopupEl.style.left = 'auto';
+                            this.chatPopupEl.style.top = 'auto';
+                            this.chatPopupEl.style.right = '20px';
+                            this.chatPopupEl.style.bottom = '20px';
+                            this.chatPopupEl.dataset.translateX = '0';
+                            this.chatPopupEl.dataset.translateY = '0';
+                        }
+                    },
+                    scrollToBottom() {
+                        if (this.chatPopupEl && this.$refs.messageArea && !this.isMinimized) {
+                            this.$nextTick(() => {
+                                this.$refs.messageArea.scrollTop = this.$refs.messageArea.scrollHeight;
+                            });
+                        }
+                    },
+                    formatTimestamp(iso) {
+                        if (!iso) return '';
+                        try { return new Date(iso).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }); }
+                        catch { return ''; }
+                    },
+                    openImageInModal(src) {
+                        if (src) this.$store.imageModal.open(src);
+                    },
+                    toggleSize() {
+                        this.isMinimized = !this.isMinimized;
+                        if (!this.isMinimized) {
+                            this.$nextTick(() => {
+                                this.scrollToBottom();
+                                const textarea = this.chatPopupEl.querySelector('.chat-input');
+                                if(textarea) this.adjustTextareaHeight(textarea);
+                            });
+                        }
+                    },
+                    async closeChat(notifyServer = false) {
+                        console.log("Closing chat. RoomID:", this.roomId, "Notify Server:", notifyServer);
+                        if (this.websocket) {
+                            this.websocket.onclose = null;
+                            this.websocket.close(1000, "User closed chat popup");
+                            this.websocket = null;
+                        }
+                        this.isOpen = false;
+                        this.roomId = null;
+                        this.listingId = null;
+                        this.listingIdProp = null;
+                        this.clearImageToSend();
+                        this.error = null;
+                        this.messages = [];
+                        this.opponent = { id: null, displayName: `{% trans "Співрозмовник" %}`, avatarUrl: this.defaultAvatar, isOnline: false };
+                        this.isMinimized = false;
+                        this.editingMessageId = null;
+                        this.editingMessageContent = '';
+                        this.resetChatPosition();
+                    },
+                    confirmHideChat() {
+                        if (!this.roomId) return;
+                        if (confirm(`{% trans "Ви впевнені, що хочете приховати цей чат? Він зникне зі списку, але історія повідомлень залишиться." %}`)) {
+                            this.hideChatRoom();
+                        }
+                    },
+                    async hideChatRoom() {
+                        if(!this.roomId) { console.error("hideChatRoom: No roomId"); return; }
+                        this.isLoading = true;
+                        const csrfToken = this.getCsrfToken();
+                        const url = `/marketplace/chat/hide/${this.roomId}/`;
+                        try {
+                            const response = await fetch(url, {
+                                method:'POST',
+                                headers:{'X-CSRFToken':csrfToken,'X-Requested-With':'XMLHttpRequest','Content-Type':'application/json'},
+                                body: JSON.stringify({})
+                            });
+                            const data = await response.json();
+                            if(response.ok && data.status ==='success'){
+                                this.closeChat(false);
+                                alert(data.message || `{% trans "Чат успішно приховано." %}`);
+                            } else{
+                                throw new Error(data.message || `{% trans "Не вдалося приховати чат." %}`);
+                            }
+                        } catch(e) {
+                            this.error = e.message || `{% trans "Помилка приховування чату." %}`;
+                            alert(this.error);
+                            console.error("Error hiding chat room:", e);
+                        } finally {
+                            this.isLoading = false;
+                        }
+                    },
+
+                    canPerformAction(ts) {
+                        if(!ts) return false;
+                        try {
+                            const messageDate = new Date(ts);
+                            const now = new Date();
+                            return (now - messageDate) / 1000 < this.messageActionTimeLimit;
+                        } catch (e) {
+                            console.error("Error in canPerformAction parsing date:", ts, e);
+                            return false;
+                        }
+                    },
+                    confirmDeleteMessage(messageId) {
+                        const message = this.messages.find(msg => msg.id === messageId);
+                        if (!message) { alert(`{% trans "Повідомлення не знайдено." %}`); return; }
+                        if (!this.canPerformAction(message.timestamp)) { alert(`{% trans "Час на видалення цього повідомлення вичерпано." %}`); return; }
+                        if (confirm(`{% trans "Ви впевнені, що хочете видалити це повідомлення?" %}`)) {
+                            this.deleteMessage(messageId);
+                        }
+                    },
+                    async deleteMessage(messageId) {
+                        this.isLoading = true;
+                        const csrfToken = this.getCsrfToken();
+                        const url = `/marketplace/chat/message/delete/${messageId}/`;
+                        try {
+                            const response = await fetch(url, {
+                                method:'POST',
+                                headers:{'X-CSRFToken':csrfToken,'X-Requested-With':'XMLHttpRequest','Content-Type':'application/json'},
+                                body: JSON.stringify({})
+                            });
+                            const data = await response.json();
+                            if(!response.ok || data.status !=='success'){
+                                throw new Error(data.message || `{% trans "Не вдалося видалити повідомлення." %}`);
+                            }
+                        } catch(e) {
+                            this.error = e.message || `{% trans "Помилка видалення повідомлення." %}`;
+                            alert(this.error);
+                            console.error("Error deleting message:", e);
+                        } finally {
+                            this.isLoading = false;
+                        }
+                    },
+                    startEditMessage(messageId) {
+                        const message = this.messages.find(msg => msg.id === messageId);
+                        if (!message) { alert(`{% trans "Повідомлення не знайдено." %}`); return; }
+                        if (message.is_deleted_by_sender) { alert(`{% trans "Видалене повідомлення не можна редагувати." %}`); return; }
+                        if (!this.canPerformAction(message.timestamp)) { alert(`{% trans "Час на редагування цього повідомлення вичерпано." %}`); return; }
+
+                        if (this.editingMessageId && this.editingMessageId !== messageId) {
+                            const prevMsgIdx = this.messages.findIndex(msg => msg.id === this.editingMessageId);
+                            if(prevMsgIdx > -1) this.messages[prevMsgIdx].is_being_edited = false;
+                        }
+
+                        const msgIdx = this.messages.findIndex(msg => msg.id === messageId);
+                        if(msgIdx > -1) {
+                            this.messages[msgIdx].is_being_edited = true;
+                            this.editingMessageId = messageId;
+                            this.editingMessageContent = message.content || '';
+                            this.$nextTick(() => {
+                                const textarea = this.chatPopupEl.querySelector(`.chat-message-wrapper[data-message-id='${messageId}'] .edit-input`);
+                                if (textarea) {
+                                    textarea.focus();
+                                    textarea.style.height = 'auto';
+                                    textarea.style.height = textarea.scrollHeight + 'px';
+                                }
+                            });
+                        }
+                    },
+                    cancelEditMessage(messageId) {
+                        if(this.editingMessageId === messageId){
+                            const msgIdx = this.messages.findIndex(msg => msg.id === messageId);
+                            if(msgIdx > -1){
+                                this.messages[msgIdx].is_being_edited = false;
+                            }
+                            this.editingMessageId = null;
+                            this.editingMessageContent = '';
+                        }
+                    },
+                    async saveEditedMessage(messageId) {
+                        if(this.editingMessageId !== messageId) return;
+                        const newContent = this.editingMessageContent.trim();
+                        const originalMessage = this.messages.find(msg => msg.id === messageId);
+
+                        if (originalMessage && newContent === (originalMessage.content || '').trim()) {
+                            this.cancelEditMessage(messageId);
+                            return;
+                        }
+                        if (originalMessage && originalMessage.message_type === 'text' && !newContent) {
+                            alert(`{% trans "Текстове повідомлення не може бути порожнім." %}`);
+                            return;
+                        }
+
+                        this.isLoading = true;
+                        const csrfToken = this.getCsrfToken();
+                        const url = `/marketplace/chat/message/edit/${messageId}/`;
+                        try {
+                            const response = await fetch(url, {
+                                method:'POST',
+                                headers:{'X-CSRFToken':csrfToken,'X-Requested-With':'XMLHttpRequest','Content-Type':'application/json'},
+                                body:JSON.stringify({content: this.editingMessageContent})
+                            });
+                            const data = await response.json();
+                            if(!response.ok || data.status !== 'success'){
+                                throw new Error(data.message || `{% trans "Не вдалося відредагувати повідомлення." %}`);
+                            }
+                        } catch(e) {
+                            this.error = e.message || `{% trans "Помилка редагування повідомлення." %}`;
+                            alert(this.error);
+                            console.error("Error saving edited message:", e);
+                        } finally {
+                            this.isLoading = false;
+                        }
+                    },
+                    startDrag(event) {
+                        if (event.target.closest('button, a, input, textarea, .chat-messages, .chat-input-area-wrapper')) return;
+                        this.isDragging = true;
+                        const computedStyle = window.getComputedStyle(this.chatPopupEl);
+                        const transform = computedStyle.transform;
+                        let currentTranslateX = 0; let currentTranslateY = 0;
+
+                        if (transform && transform !== 'none') {
+                            try {
+                                const matrix = new DOMMatrixReadOnly(transform);
+                                currentTranslateX = matrix.m41;
+                                currentTranslateY = matrix.m42;
+                            } catch (e) { console.warn("Could not parse transform matrix.", e); }
+                        } else {
+                            const rect = this.chatPopupEl.getBoundingClientRect();
+                            this.chatPopupEl.style.left = `${rect.left}px`;
+                            this.chatPopupEl.style.top = `${rect.top}px`;
+                            this.chatPopupEl.style.bottom = 'auto';
+                            this.chatPopupEl.style.right = 'auto';
+                            currentTranslateX = 0; currentTranslateY = 0;
+                        }
+                        this.chatPopupInitialTransformX = currentTranslateX;
+                        this.chatPopupInitialTransformY = currentTranslateY;
+                        this.dragStartX = event.clientX;
+                        this.dragStartY = event.clientY;
+
+                        document.addEventListener('mousemove', this.boundDoDrag, { passive: false });
+                        document.addEventListener('mouseup', this.boundStopDrag);
+                        this.chatPopupEl.classList.add('is-dragging');
+                    },
+                    doDrag(event) {
+                        if (!this.isDragging) return;
+                        event.preventDefault();
+                        const dx = event.clientX - this.dragStartX;
+                        const dy = event.clientY - this.dragStartY;
+                        const newX = this.chatPopupInitialTransformX + dx;
+                        const newY = this.chatPopupInitialTransformY + dy;
+                        this.chatPopupEl.style.transform = `translate(${newX}px, ${newY}px)`;
+                        this.chatPopupEl.dataset.translateX = newX;
+                        this.chatPopupEl.dataset.translateY = newY;
+                    },
+                    stopDrag() {
+                        if (!this.isDragging) return;
+                        this.isDragging = false;
+                        document.removeEventListener('mousemove', this.boundDoDrag);
+                        document.removeEventListener('mouseup', this.boundStopDrag);
+                        this.chatPopupEl.classList.remove('is-dragging');
+                    }
+                };
+            });
+        });
+    </script>
+{% endblock %}

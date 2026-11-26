@@ -1,0 +1,21 @@
+{% extends 'core/main.html' %}
+{% load i18n %}
+{% block title %}{% trans "Доставка" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-12 px-4">
+    <div class="prose dark:prose-invert max-w-none">
+        <h1>{% trans "Інформація про доставку" %}</h1>
+        
+        <h2>{% trans "Способи доставки" %}</h2>
+        <p>{% trans "Ми пропонуємо наступні способи доставки:" %}</p>
+        <ul>
+            <li><strong>{% trans "Доставка 'Поштою':" %}</strong> {% trans "Термін 2-4 робочі дні по Україні." %}</li>
+        </ul>
+
+        <h2>{% trans "Вартість доставки" %}</h2>
+        <p>{% trans "Вартість доставки розраховується індивідуально під час оформлення замовлення і залежить від ваги, габаритів та обраного способу доставки." %}</p>
+        
+    </div>
+</div>
+{% endblock %}

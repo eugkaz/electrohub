@@ -1,0 +1,19 @@
+{% if categories %}
+    <div class="bg-white p-5 rounded-xl shadow-xl border border-gray-200/75">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-3 flex items-center gap-x-2">
+            <svg class="w-5 h-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v3.776" /> </svg>
+            Категорії
+        </h3>
+        <ul class="space-y-1.5">
+            {% for category in categories %}
+                <li>
+                    <a href="{% url 'category-detail' category.id %}"
+                       class="flex justify-between items-center text-sm text-gray-700 hover:text-yellow-700 hover:bg-yellow-50/50 rounded-md px-2.5 py-2 transition-colors duration-150 group {% if active_category and active_category.id == category.id %} bg-yellow-100 text-yellow-800 font-semibold {% endif %}">
+                        <span>{{ category.name }}</span>
+                        <span class="text-xs text-gray-400 group-hover:text-yellow-600 {% if active_category and active_category.id == category.id %} text-yellow-700 {% endif %}">({{ category.num_posts|default:0 }})</span>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}

@@ -1,0 +1,56 @@
+{% load i18n %}
+{% load admin_template_tags %}
+
+{# Контекст: menu_title, icon_svg_path, current_url_prefix, sub_items_config (тепер це список), open #}
+
+{% is_active_prefix current_url_prefix as is_active_section %}
+
+<div x-data="{ itemOpen: {{ is_active_section|yesno:'true,false' }} }">
+    <button @click="itemOpen = !itemOpen"
+            type="button"
+            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-yellow-400 group transition-colors focus:outline-none focus:bg-gray-700"
+            :class="{ 'bg-gray-700 text-yellow-300': itemOpen && open, 'bg-gray-900 text-yellow-400': is_active_section && !itemOpen && open }"
+            aria-expanded="itemOpen.toString()"
+            aria-controls="submenu-{{ menu_title|slugify }}">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-3 shrink-0 text-gray-400 group-hover:text-yellow-400 transition-colors"
+                 :class="{ 'text-yellow-300': itemOpen && open, 'text-yellow-400': is_active_section && !itemOpen && open }"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="{{ icon_svg_path }}"></path>
+            </svg>
+            <span class="truncate transition-opacity duration-75"
+                  :class="{'opacity-100 delay-75': open, 'opacity-0 pointer-events-none': !open && !($store.sidebar && $store.sidebar.isForcedOpen)}"> {# Змінив логіку видимості тексту #}
+                {{ menu_title }}
+            </span>
+        </div>
+        <svg class="w-4 h-4 shrink-0 transform transition-transform duration-200 text-gray-400 group-hover:text-yellow-400"
+             :class="{ 'rotate-180 text-yellow-300': itemOpen, 'text-yellow-400': is_active_section && !itemOpen && open }"
+             x-show="open && sub_items_config && sub_items_config.length > 0" {# Перевірка, що sub_items_config не порожній #}
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+    </button>
+
+    {% if sub_items_config %}
+        <div x-show="itemOpen && open"
+             x-collapse
+             id="submenu-{{ menu_title|slugify }}"
+             class="pl-5 mt-1 space-y-0.5"
+             role="region">
+            {% for sub_item in sub_items_config %}
+                {% if sub_item.url_name %}
+                    {% is_active_prefix "" sub_item.url_name as is_active_sub_item %}
+                    <a href="{% url sub_item.url_name %}"
+                       class="block px-3 py-2 text-xs font-medium rounded-md text-gray-400 hover:bg-gray-600 hover:text-yellow-300 transition-colors
+                              {% if is_active_sub_item %}bg-gray-600/50 text-yellow-300 font-semibold{% endif %}">
+                        - {{ sub_item.title }}
+                    </a>
+                {% else %}
+                    <span class="block px-3 py-2 text-xs font-medium text-gray-500 cursor-not-allowed" title="URL для цього пункту не налаштовано">
+                        - {{ sub_item.title }} (неактивно)
+                    </span>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

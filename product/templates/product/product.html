@@ -1,0 +1,238 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load i18n %}
+{% load custom_filters %}
+
+{% block title %} {{ product.name }} - {% trans "Товар" %} | ElectoHub {% endblock %}
+
+{% block extra_css %}
+{# Swiper v8 CSS #}
+    <link rel="stylesheet" href="https://unpkg.com/swiper@8/swiper-bundle.min.css"/>
+{# Font Awesome #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        .rating-star { fill: #facc15; } .rating-star-inactive { fill: #d1d5db; }
+        .feature-table td { padding-top: 0.5rem; padding-bottom: 0.5rem; } .feature-table tr:not(:last-child) td { border-bottom: 1px solid #e5e7eb; }
+        .swiper { --swiper-theme-color: #f59e0b; --swiper-navigation-size: 28px; --swiper-pagination-bullet-size: 8px; --swiper-pagination-bullet-inactive-color: #9ca3af; --swiper-pagination-bullet-inactive-opacity: 0.6; --swiper-pagination-color: var(--swiper-theme-color); --swiper-navigation-sides-offset: 8px; }
+        .main-swiper { border-radius: 0.75rem; overflow: hidden; border: 1px solid #e5e7eb; background-color: white; }
+        .main-swiper .swiper-slide { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; } .main-swiper .swiper-slide img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+        .thumbnail-swiper { margin-top: 0.75rem; padding-bottom: 5px; } .thumbnail-swiper .swiper-slide { width: 64px; height: 64px; opacity: 0.6; transition: opacity 0.3s ease, border-color 0.3s ease; cursor: pointer; border: 2px solid transparent; border-radius: 0.5rem; overflow: hidden; }
+        .thumbnail-swiper .swiper-slide-thumb-active { opacity: 1; border-color: var(--swiper-theme-color); } .thumbnail-swiper .swiper-slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        .swiper-button-next, .swiper-button-prev { color: #374151; background-color: rgba(255, 255, 255, 0.8); border-radius: 50%; width: calc(var(--swiper-navigation-size) + 6px); height: calc(var(--swiper-navigation-size) + 6px); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); transition: all 0.2s ease; }
+        .swiper-button-next:hover, .swiper-button-prev:hover { background-color: white; color: #000; transform: scale(1.05); } .swiper-button-next::after, .swiper-button-prev::after { font-size: 14px; font-weight: bold; }
+        .swiper-pagination-bullet { transition: background-color 0.2s ease, transform 0.2s ease; } .swiper-pagination-bullet-active { transform: scale(1.15); }
+        #rating-stars label { transition: color 0.2s ease-in-out; color: #d1d5db; } #rating-stars:hover label { color: #facc15; } #rating-stars label:hover ~ label { color: #d1d5db; } #rating-stars input:checked ~ label { color: #facc15; }
+        .advantage-item svg { width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; color: #fbbf24; flex-shrink: 0; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-50">
+        <div class="max-w-7xl mx-auto py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+
+            {% include 'core/partials/breadcrumbs.html' with product=product %}
+
+            <div class="lg:grid lg:grid-cols-12 lg:gap-x-8 xl:gap-x-12 items-start mt-6">
+
+            {# --- ЛІВА КОЛОНКА: ГАЛЕРЕЯ --- #}
+                <div class="lg:col-span-7 mb-8 lg:mb-0 lg:sticky lg:top-6">
+                    {% with main_image=product.image additional_images=images %} {# images передается из view #}
+                        <div class="relative">
+            {# --- Основний слайдер --- #}
+                            <div class="swiper main-swiper shadow-md border border-gray-200">
+                                <div class="swiper-wrapper">
+                    {# Основне зображення товару #}
+                                    {% if main_image and main_image.url %}
+                                        <div class="swiper-slide">
+                                            <img src="{{ main_image.url }}" alt="{{ product.name }} - {% trans 'основне фото' %}" loading="lazy">
+                                        </div>
+                                    {% endif %}
+
+                    {# Додаткові зображення товару #}
+                                    {% for img_obj in additional_images %}
+                                        {% if img_obj.image and img_obj.image.url %}
+                                            <div class="swiper-slide">
+                                                <img src="{{ img_obj.image.url }}" alt="{{ img_obj.alt_text|default:product.name }} - {% trans 'фото' %} {% if main_image %}{{ forloop.counter|add:1 }}{% else %}{{ forloop.counter }}{% endif %}" loading="lazy">
+                                            </div>
+                                        {% endif %}
+                                    {% empty %}
+                        {# Плейсхолдер, якщо немає ВЗАГАЛІ ніяких зображень (ні основного, ні додаткових) #}
+                                        {% if not main_image %}
+                                            <div class="swiper-slide">
+                                                <img src="{% static 'images/placeholder.png' %}" alt="{% trans 'Немає зображення' %}">
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+
+                {# Елементи керування (будуть показані/сховані JavaScript-ом) #}
+                                <div class="swiper-pagination !bottom-2"></div>
+
+<!-- Кнопка "вперед" -->
+                                <div class="swiper-button-next !right-2 !w-9 !h-9 text-white rounded-full flex items-center justify-center hover:bg-[#8E1616] transition">
+
+                                </div>
+
+<!-- Кнопка "назад" -->
+                                <div class="swiper-button-prev !left-2 !w-9 !h-9 text-white rounded-full flex items-center justify-center hover:bg-[#8E1616] transition">
+
+                                </div>
+                            </div>
+
+            {# --- Слайдер мініатюр (thumbsSlider) --- #}
+            {# Рахуємо загальну кількість зображень для умови відображення мініатюр #}
+                            {% with main_image_exists=main_image|yesno:"1,0"|add:"0" additional_images_count=additional_images.count %}
+                                {% if main_image_exists|add:additional_images_count > 1 %}
+                                    <div thumbsSlider="" class="swiper thumbnail-swiper">
+                                        <div class="swiper-wrapper">
+                            {# Мініатюра основного зображення #}
+                                            {% if main_image and main_image.url %}
+                                                <div class="swiper-slide">
+                                                    <img src="{{ product.get_thumbnail }}" alt="{% trans 'Превю' %} 1" loading="lazy">
+                                                </div>
+                                            {% endif %}
+                            {# Мініатюри додаткових зображень #}
+                                            {% for img_obj in additional_images %}
+                                                {% if img_obj.image and img_obj.image.url %}
+                                                    <div class="swiper-slide">
+                                        {# Важливо: для миниатюр можно использовать не thumbnail, а само изображение, если нет отдельного поля для thumbnail в ProductImage #}
+                                                        <img src="{{ img_obj.image.url }}" alt="{% trans 'Превю' %} {% if main_image %}{{ forloop.counter|add:1 }}{% else %}{{ forloop.counter }}{% endif %}" loading="lazy">
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+
+                            {% if product.on_sale %}
+                                <div class="absolute top-3 left-3 z-10">
+                                    <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/10">
+                                        -{{ product.discount_percent }}%
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endwith %}
+                </div>
+
+            {# --- ПРАВА КОЛОНКА: ДЕТАЛІ ТОВАРУ --- #}
+                <div class="lg:col-span-5">
+                    <div class="mb-3 flex items-center justify-between text-sm"> <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {% if product.in_stock %} bg-green-100 text-green-800 ring-1 ring-inset ring-green-200 {% else %} bg-red-100 text-red-800 ring-1 ring-inset ring-red-200 {% endif %}"> {% if product.in_stock %}{% trans "В наявності" %}{% else %}{% trans "Немає в наявності" %}{% endif %} </span> {% if product.sku %} <span class="text-gray-500">{% trans "Артикул:" %} {{ product.sku }}</span> {% endif %} </div>
+                    <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight mb-2">{{ product.name }}</h1>
+                    {% if product.brand %} <div class="mb-3 text-sm"> <span class="text-gray-500">{% trans "Бренд:" %}</span> <a href="{% url 'shop' %}?brand={{ product.brand.slug }}" class="font-medium text-gray-700 hover:text-yellow-600">{{ product.brand.name }}</a> </div> {% endif %}
+                    <div class="mb-4 flex items-center"> {% with avg_rating=product.get_average_rating %} <div class="flex items-center" {% if avg_rating %}title="{% blocktrans with rating=avg_rating %}Середній рейтинг: {{ rating }} з 5{% endblocktrans %}"{% endif %}> {% for i in "12345"|make_list %} <svg class="w-5 h-5 {% if avg_rating and i|add:0 <= avg_rating %} rating-star {% else %} rating-star-inactive {% endif %}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg> {% endfor %} </div> {% with approved_reviews_count=reviews.count %} {% if approved_reviews_count > 0 %} <a href="#reviews-section" class="ml-2 text-sm font-medium text-yellow-600 hover:text-yellow-500"> ({{ approved_reviews_count }} {% blocktrans count counter=approved_reviews_count %}відгук{% plural %}відгуків{% endblocktrans %}) </a> {% else %} <span class="ml-2 text-sm text-gray-500">({% trans "Немає відгуків" %})</span> {% endif %} {% endwith %} {% endwith %} </div>
+                    <div class="mt-3 pb-5 mb-6 flex items-center justify-between border-b border-gray-200"> <div class="flex items-baseline gap-x-2"> {% if product.on_sale %} <span class="text-3xl font-bold text-red-600">{{ product.get_display_price }} ₴</span> <span class="text-lg font-medium text-gray-400 line-through">{{ product.get_display_original_price }} ₴</span> {% else %} <span class="text-3xl font-bold text-gray-900">{{ product.get_display_price }} ₴</span> {% endif %} </div> <div class="flex items-center"> {% include 'core/partials/toggle_favorite_icon.html' with product=product is_favorite=is_favorite source=source %} </div> </div>
+                    {% with key_features=features|slice:":5" %} {% if key_features %} <div class="mb-6"> <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">{% trans "Основні характеристики" %}</h3> <ul class="space-y-1.5 text-sm"> {% for feature in key_features %} <li class="flex items-start"> <span class="text-gray-500 w-2/5 shrink-0">{{ feature.name }}:</span> <span class="text-gray-800 font-medium">{{ feature.value }}</span> </li> {% endfor %} {% if features.count > 5 %} <li><a href="#product-tabs" @click.prevent="activeTab='features'; document.getElementById('product-tabs').scrollIntoView({behavior:'smooth', block:'start'});" class="text-sm text-yellow-600 hover:underline">{% trans "Всі характеристики..." %}</a></li> {% endif %} </ul> </div> {% endif %} {% endwith %}
+                    {% if product.short_description %} <p class="mb-6 text-sm text-gray-700 leading-relaxed">{{ product.short_description }}</p> {% endif %}
+                    <div class="mb-8"> {% include 'cart/partials/add_to_cart_button.html' with product=product style='primary' %} </div>
+                    <div class="mb-8 border border-gray-200 rounded-lg p-4 bg-gray-50/50"> <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center"> <div class="flex flex-col items-center p-2"> <i class="fa-solid fa-truck-fast text-xl text-gray-500 mb-1.5"></i> <span class="text-xs font-medium text-gray-700">{% trans "Швидка доставка" %}</span> <span class="text-xs text-gray-500">{% trans "Нова Пошта / Укрпошта" %}</span> </div> <div class="flex flex-col items-center p-2"> <i class="fa-regular fa-credit-card text-xl text-gray-500 mb-1.5"></i> <span class="text-xs font-medium text-gray-700">{% trans "Зручна оплата" %}</span> <span class="text-xs text-gray-500">{% trans "Онлайн / При отриманні" %}</span> </div> <div class="flex flex-col items-center p-2"> <i class="fa-solid fa-shield-halved text-xl text-gray-500 mb-1.5"></i> <span class="text-xs font-medium text-gray-700">{% trans "Гарантія якості" %}</span> <span class="text-xs text-gray-500">{% trans "Обмін / Повернення" %}</span> </div> </div> </div>
+                    <div class="mt-8" id="product-tabs" x-data="{ activeTab: '{% if product.description %}description{% elif features %}features{% elif product.compatible_models.all %}compatibility{% else %}reviews{% endif %}' }"> <div class="border-b border-gray-200"> <nav class="-mb-px flex space-x-6 overflow-x-auto pb-px" aria-label="Tabs"> {% if product.description %} <button @click="activeTab = 'description'" :class="{ 'border-yellow-500 text-yellow-600': activeTab === 'description', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'description' }" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm focus:outline-none transition-colors duration-150"> {% trans "Повний опис" %} </button> {% endif %} {% if features %} <button @click="activeTab = 'features'" :class="{ 'border-yellow-500 text-yellow-600': activeTab === 'features', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'features' }" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm focus:outline-none transition-colors duration-150"> {% trans "Характеристики" %} </button> {% endif %} {% with compatible=product.compatible_models.all %} {% if compatible %} <button @click="activeTab = 'compatibility'" :class="{ 'border-yellow-500 text-yellow-600': activeTab === 'compatibility', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'compatibility' }" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm focus:outline-none transition-colors duration-150"> {% trans "Сумісність" %} </button> {% endif %} {% endwith %} <button @click="activeTab = 'reviews'" :class="{ 'border-yellow-500 text-yellow-600': activeTab === 'reviews', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'reviews' }" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm focus:outline-none transition-colors duration-150"> {% trans "Відгуки" %} ({{ reviews.count }}) </button> </nav> </div> <div class="mt-6 space-y-8"> {% if product.description %} <div x-show="activeTab === 'description'" x-transition:enter="fade-enter-active" x-transition:enter-start="fade-enter-from" x-transition:enter-end="opacity-100" x-transition:leave="fade-leave-active" x-transition:leave-start="opacity-100" x-transition:leave-end="fade-leave-to"> <h3 class="sr-only">{% trans "Опис товару" %}</h3> <div class="prose prose-sm sm:prose-base max-w-none text-gray-600"> {{ product.description|linebreaksbr }} </div> </div> {% endif %} {% if features %} <div x-show="activeTab === 'features'" x-transition:enter="fade-enter-active" x-transition:enter-start="fade-enter-from" x-transition:enter-end="opacity-100" x-transition:leave="fade-leave-active" x-transition:leave-start="opacity-100" x-transition:leave-end="fade-leave-to"> <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Детальні характеристики" %}</h3> <table class="w-full feature-table text-sm"> <tbody> {% for feature in features %} <tr class="grid grid-cols-3 gap-4"> <td class="py-2 font-medium text-gray-500 col-span-1">{{ feature.name }}</td> <td class="py-2 text-gray-700 col-span-2">{{ feature.value }}</td> </tr> {% endfor %} </tbody> </table> </div> {% endif %} {% with compatible=product.compatible_models.all %} {% if compatible %} <div x-show="activeTab === 'compatibility'" x-transition:enter="fade-enter-active" x-transition:enter-start="fade-enter-from" x-transition:enter-end="opacity-100" x-transition:leave="fade-leave-active" x-transition:leave-start="opacity-100" x-transition:leave-end="fade-leave-to"> <h3 class="text-lg font-medium text-gray-900 mb-4">{% trans "Сумісні моделі транспорту" %}</h3> <ul class="list-disc list-inside space-y-1 text-sm text-gray-700"> {% for model in compatible %} <li>{{ model.name }}</li> {% endfor %} </ul> </div> {% endif %} {% endwith %} <div x-show="activeTab === 'reviews'" x-transition:enter="fade-enter-active" x-transition:enter-start="fade-enter-from" x-transition:enter-end="opacity-100" x-transition:leave="fade-leave-active" x-transition:leave-start="opacity-100" x-transition:leave-end="fade-leave-to"> <div id="reviews-section"> {% include 'product/partials/review_section.html' with reviews=reviews product=product login_url=login_url request=request %} </div> </div> </div> </div>
+
+                </div>
+            </div>
+
+        {# --- СХОЖІ ТОВАРИ --- #}
+            {% if similar_products %}
+                <section class="mt-16 border-t border-gray-200 pt-12"> <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-8">{% trans "Схожі товари" %}</h2> <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8"> {% for similar_product in similar_products %} {% with current_is_favorite=favorite_status|get_item:similar_product.id|default:False %} {% include 'product/partials/item_list_product.html' with product=similar_product is_favorite=current_is_favorite source='similar' favorite_status=favorite_status %} {% endwith %} {% endfor %} </div> </section>
+            {% endif %}
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+{# Swiper v8 Initialization Script #}
+    <script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainSwiperEl = document.querySelector('.main-swiper');
+            const thumbSwiperEl = document.querySelector('.thumbnail-swiper');
+            let thumbnailSwiperInstance = null;
+            let mainSwiperInstance = null;
+
+            if (thumbSwiperEl) {
+                try {
+                    thumbnailSwiperInstance = new Swiper(thumbSwiperEl, {
+                        spaceBetween: 8,
+                        slidesPerView: 'auto', // Важно для разного количества миниатюр
+                        freeMode: true,
+                        watchSlidesProgress: true,
+                        centerInsufficientSlides: true, // Полезно, если миниатюр мало
+                        threshold: 5, // Порог для свайпа
+                    });
+                } catch (e) {
+                    console.error("Error initializing Thumbnail Swiper:", e);
+                }
+            }
+
+            if (mainSwiperEl) {
+                const mainSwiperSlides = mainSwiperEl.querySelectorAll('.swiper-wrapper > .swiper-slide');
+                const hasMultipleSlides = mainSwiperSlides.length > 1;
+                console.log(`Main Swiper: Found ${mainSwiperSlides.length} slides. Has multiple: ${hasMultipleSlides}`);
+
+                try {
+                    mainSwiperInstance = new Swiper(mainSwiperEl, {
+                        loop: hasMultipleSlides, // Цикличность только если слайдов больше одного
+                        spaceBetween: 10,
+                        navigation: hasMultipleSlides ? { // Навигация только если слайдов больше одного
+                            nextEl: '.swiper-button-next',
+                            prevEl: '.swiper-button-prev'
+                        } : false,
+                        pagination: hasMultipleSlides ? { // Пагинация только если слайдов больше одного
+                            el: '.swiper-pagination',
+                            clickable: true
+                        } : false,
+                        thumbs: { // Связь с миниатюрами
+                            swiper: thumbnailSwiperInstance ? thumbnailSwiperInstance : null
+                        },
+                        on: { // События для синхронизации активной миниатюры
+                            init: function () {
+                        // Проверяем, есть ли слайды, чтобы избежать ошибки на this.slides[0]
+                                if (this.slides && this.slides.length > 0) {
+                                    updateThumbBorder(this.realIndex);
+                                }
+                            },
+                            slideChangeTransitionEnd: function () {
+                                updateThumbBorder(this.realIndex);
+                            }
+                        }
+                    });
+
+            // Скрываем навигацию и пагинацию, если слайд один
+                    if (!hasMultipleSlides) {
+                        const navNext = mainSwiperEl.querySelector('.swiper-button-next');
+                        const navPrev = mainSwiperEl.querySelector('.swiper-button-prev');
+                        const pagination = mainSwiperEl.querySelector('.swiper-pagination');
+                        if(navNext) navNext.style.display = 'none';
+                        if(navPrev) navPrev.style.display = 'none';
+                        if(pagination) pagination.style.display = 'none';
+                    }
+                } catch (e) {
+                    console.error("Error initializing Main Swiper:", e);
+                }
+            }
+
+            function updateThumbBorder(activeIndex) {
+                if (thumbnailSwiperInstance && thumbnailSwiperInstance.slides) {
+                    thumbnailSwiperInstance.slides.forEach((thumb, index) => {
+                        thumb.classList.toggle('swiper-slide-thumb-active', index === activeIndex);
+                    });
+            // Плавная прокрутка миниатюр к активному слайду
+                    try {
+                        if (thumbnailSwiperInstance.params.slidesPerView !== 'auto' && activeIndex >= thumbnailSwiperInstance.params.slidesPerView -1) {
+                            thumbnailSwiperInstance.slideToLoop(activeIndex); // или slideTo, если loop=false
+                        } else if (thumbnailSwiperInstance.params.slidesPerView === 'auto') {
+                            thumbnailSwiperInstance.slideToLoop(activeIndex);
+                        }
+                    } catch(e) {
+                        console.warn("Could not slide thumbnail swiper to active index:", e);
+                    }
+                }
+            }
+        });
+    </script>
+{# AlpineJS #}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% endblock %}

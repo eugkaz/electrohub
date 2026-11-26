@@ -1,0 +1,364 @@
+/* static/css/admin_custom.css */
+
+/* --- Визначення Основних Змінних (Копіюємо або адаптуємо з CSS вашого сайту) --- */
+:root {
+    --primary: #6D28D9;      /* Ваш основний колір */
+    --primary-dark: #5B21B6;  /* Темніший варіант основного */
+    --accent: #EC4899;       /* Ваш акцентний колір */
+    --accent-dark: #DB2777;   /* Темніший варіант акцентного */
+    --text-dark: #1F2937;     /* Темний текст */
+    --text-medium: #6B7280;   /* Середній текст */
+    --text-light: #F9FAFB;    /* Світлий текст (для темних фонів) */
+    --bg-light: #F3F4F6;     /* Світлий фон для елементів */
+    --bg-lighter: #FFFFFF;   /* Білий фон */
+    --border-color: #E5E7EB; /* Колір рамок */
+    --border-color-light: #F3F4F6;
+    --success: #10B981;      /* Зелений для успіху */
+    --warning: #F59E0B;      /* Жовтий для попереджень */
+    --danger: #EF4444;       /* Червоний для помилок/видалення */
+    --info: #3B82F6;         /* Синій для інформації */
+
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; /* Замініть на шрифт вашого сайту */
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    --border-radius-base: 0.5rem; /* 8px */
+    --border-radius-sm: 0.375rem; /* 6px */
+    --border-radius-lg: 0.75rem; /* 12px */
+}
+
+/* --- Загальні стилі --- */
+body.baton-root {
+    font-family: var(--font-sans);
+    color: var(--text-dark);
+    background-color: #f8f9fc; /* Трохи інший фон для адмінки, щоб відрізнявся від сайту */
+}
+
+a {
+    color: var(--primary);
+    transition: color 0.2s ease-in-out;
+}
+a:hover {
+    color: var(--primary-dark);
+}
+
+/* --- Хедер --- */
+#header {
+    background-color: var(--bg-lighter);
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+#branding h1, #branding h1 a:link, #branding h1 a:visited {
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Відстань між лого та текстом */
+    font-weight: 600;
+}
+#user-tools {
+    color: var(--text-medium);
+    font-size: 0.875rem;
+}
+#user-tools a {
+    color: var(--primary);
+    font-weight: 500;
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--border-radius-sm);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+#user-tools a:hover {
+    background-color: var(--bg-light);
+    color: var(--primary-dark);
+}
+#user-tools strong {
+    color: var(--text-dark);
+}
+
+
+/* --- Бічна Панель (Меню) --- */
+.sidebar {
+    background-color: var(--bg-lighter);
+    border-right: 1px solid var(--border-color);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.03);
+}
+.sidebar .nav-title {
+    color: var(--text-medium);
+    font-weight: 600;
+    font-size: 0.75rem; /* Менший шрифт для заголовків груп */
+    text-transform: uppercase;
+    padding: 1.5rem 1rem 0.5rem 1.25rem; /* Змінені відступи */
+}
+.sidebar .nav-item .nav-link {
+    color: var(--text-dark);
+    padding: 0.75rem 1rem 0.75rem 1.25rem; /* Змінені відступи */
+    border-left: 3px solid transparent; /* Для індикації активного стану */
+    transition: background-color 0.2s ease, color 0.2s ease, border-left-color 0.2s ease;
+    font-weight: 500;
+    border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+    margin-right: 10px; /* Невеликий відступ справа */
+}
+.sidebar .nav-item .nav-link i.fa { /* Іконки FontAwesome */
+    margin-right: 10px;
+    color: var(--text-medium);
+    width: 18px; /* Фіксована ширина для вирівнювання */
+    text-align: center;
+    transition: color 0.2s ease;
+}
+.sidebar .nav-item.active > .nav-link, /* Активний пункт */
+.sidebar .nav-item:hover > .nav-link { /* Пункт при наведенні */
+    background-color: rgba(var(--primary-rgb, 109, 40, 217), 0.08); /* Легкий фон основного кольору */
+    color: var(--primary);
+    border-left-color: var(--primary);
+}
+.sidebar .nav-item.active > .nav-link i.fa,
+.sidebar .nav-item:hover > .nav-link i.fa {
+    color: var(--primary); /* Іконка теж стає основного кольору */
+}
+
+/* Вкладене меню */
+.sidebar .nav-item .nav {
+    background-color: rgba(0,0,0,0.02); /* Трохи темніший фон для підменю */
+    padding-left: 1.5rem; /* Більший відступ для підпунктів */
+    border-left: 3px solid rgba(var(--primary-rgb, 109, 40, 217), 0.1);
+    margin-left: 1.25rem;
+    margin-right: 10px;
+    border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
+    padding-bottom: 0.5rem;
+    padding-top: 0.5rem;
+}
+.sidebar .nav-item .nav .nav-link {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.9em;
+    border-left: none; /* Забираємо ліву рамку у підпунктів */
+}
+.sidebar .nav-item .nav .nav-link:hover {
+    background-color: transparent;
+    color: var(--primary);
+}
+.sidebar .nav-item .nav .nav-item.active > .nav-link {
+    background-color: transparent;
+    color: var(--primary);
+    font-weight: 600; /* Жирніший активний підпункт */
+}
+
+
+/* --- Основний Контент --- */
+#content {
+    padding: 2rem; /* Більше повітря */
+}
+.module caption { /* Заголовки таблиць/модулів */
+    background: var(--bg-light);
+    color: var(--text-dark);
+    font-weight: 600;
+    font-size: 1.1em;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+    padding: 0.8rem 1.2rem;
+}
+.module table {
+    border: 1px solid var(--border-color);
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg); /* Заокруглення знизу */
+    overflow: hidden; /* Щоб border-radius працював */
+}
+.module th { /* Заголовки стовпців таблиці */
+    background-color: #f9fafb; /* Трохи світліше за фон модуля */
+    font-weight: 600;
+    color: var(--text-medium);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+.module td, .module th {
+     padding: 0.9rem 1.2rem; /* Збільшені відступи в таблицях */
+     border-bottom: 1px solid var(--border-color-light); /* Світліші роздільники рядків */
+     vertical-align: middle;
+}
+.module tr:last-child td {
+    border-bottom: none; /* Забираємо рамку у останнього рядка */
+}
+.row1 { background-color: transparent; } /* Прибираємо зебру */
+.row2 { background-color: rgba(0,0,0,0.015); } /* Дуже легка зебра */
+
+
+/* --- Кнопки --- */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background-color: var(--primary);
+    color: var(--text-light) !important; /* Важливо для перезапису */
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: var(--border-radius-base);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover, a.button:hover {
+    background-color: var(--primary-dark);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Кнопка за замовчуванням (зберегти) */
+.button.default, input[type=submit].default, .submit-row input.default {
+    background-color: var(--accent); /* Акцентний колір для основної дії */
+}
+.button.default:hover, input[type=submit].default:hover, .submit-row input.default:hover {
+    background-color: var(--accent-dark);
+}
+
+/* Кнопка видалення */
+.button.deletelink, a.deletelink {
+    background-color: var(--danger);
+    color: var(--text-light) !important;
+}
+.button.deletelink:hover, a.deletelink:hover {
+    background-color: #CC2525; /* Темніший червоний */
+}
+
+/* Кнопки в рядку submit (внизу форми) */
+.submit-row {
+    background: var(--bg-lighter);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 1rem;
+    margin-top: 1.5rem;
+}
+
+/* --- Форми --- */
+.form-row {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color-light);
+}
+.form-row:last-child {
+    border-bottom: none;
+}
+label {
+    font-weight: 500;
+    color: var(--text-dark);
+}
+input[type="text"], input[type="password"], input[type="email"], input[type="url"],
+input[type="number"], input[type="tel"], textarea, select, .vDateField, .vTimeField {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-base);
+    padding: 0.6rem 0.8rem;
+    width: 100%; /* Або задайте потрібну ширину */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: var(--bg-lighter);
+}
+input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus, input[type="url"]:focus,
+input[type="number"]:focus, input[type="tel"]:focus, textarea:focus, select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 109, 40, 217), 0.2);
+    outline: none;
+}
+select {
+    /* Можна додати кастомну стрілку, якщо хочете */
+}
+.help, .help-tooltip {
+    font-size: 0.85em;
+    color: var(--text-medium);
+    margin-top: 0.3rem;
+}
+ul.errorlist { /* Помилки валідації */
+    color: var(--danger);
+    margin: 0.5rem 0 0 0;
+    padding: 0.5rem 1rem;
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--border-radius-sm);
+    list-style-type: none;
+    font-size: 0.9em;
+}
+
+
+/* --- Сторінка входу --- */
+body.login {
+    /* Якщо ви НЕ використовуєте LOGIN_SPLASH */
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    /* Або просто фон: var(--primary); */
+}
+body.login #header { /* Ховаємо стандартний хедер */
+    display: none;
+}
+body.login #container {
+    background-color: var(--bg-lighter);
+    border: none;
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    padding: 2.5rem;
+    min-width: 380px; /* Трохи ширша форма */
+}
+body.login #content-main {
+    /* Додаткові стилі для вмісту форми, якщо треба */
+}
+body.login .form-row {
+    padding: 0.8rem 0;
+    border: none;
+}
+body.login h1 { /* Логотип на сторінці входу */
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+body.login h1 img {
+    max-width: 150px; /* Обмеження ширини лого */
+    height: auto;
+}
+body.login input[type=submit] {
+    width: 100%;
+    padding: 0.8rem;
+    margin-top: 1rem;
+    font-size: 1.1em;
+    background-color: var(--accent); /* Акцентний колір для кнопки входу */
+}
+body.login input[type=submit]:hover {
+    background-color: var(--accent-dark);
+}
+
+/* --- Інші елементи (Повідомлення, пагінація...) --- */
+ul.messagelist li { /* Повідомлення зверху (успіх, помилка...) */
+    border-radius: var(--border-radius-base);
+    padding: 1rem 1.5rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+ul.messagelist li.success { background-color: rgba(var(--success-rgb, 16, 185, 129), 0.1); color: #05754F; border: 1px solid rgba(var(--success-rgb, 16, 185, 129), 0.3); }
+ul.messagelist li.warning { background-color: rgba(var(--warning-rgb, 245, 158, 11), 0.1); color: #9A6306; border: 1px solid rgba(var(--warning-rgb, 245, 158, 11), 0.3); }
+ul.messagelist li.error   { background-color: rgba(var(--danger-rgb, 239, 68, 68), 0.1); color: var(--danger); border: 1px solid rgba(var(--danger-rgb, 239, 68, 68), 0.3); }
+ul.messagelist li.info    { background-color: rgba(var(--info-rgb, 59, 130, 246), 0.1); color: #205CB3; border: 1px solid rgba(var(--info-rgb, 59, 130, 246), 0.3); }
+
+.paginator {
+    margin-top: 1.5rem;
+    text-align: center;
+    color: var(--text-medium);
+}
+.paginator a, .paginator span.this-page {
+    background-color: var(--bg-lighter);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 0.9rem;
+    margin: 0 0.2rem;
+    border-radius: var(--border-radius-sm);
+    color: var(--text-dark);
+    text-decoration: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.paginator a:hover {
+    background-color: var(--bg-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.paginator span.this-page {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+/* Додаємо змінні RGB для використання в rgba() */
+body {
+ --primary-rgb: 109, 40, 217;
+ --accent-rgb: 236, 72, 153;
+ --success-rgb: 16, 185, 129;
+ --warning-rgb: 245, 158, 11;
+ --danger-rgb: 239, 68, 68;
+ --info-rgb: 59, 130, 246;
+}

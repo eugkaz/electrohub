@@ -1,0 +1,71 @@
+{% extends 'core/main.html' %}
+{% load static %}
+
+{% block title %}Редагування: {{ post.title }}{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-50 py-12 md:py-16">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200/75">
+                <h1 class="mb-6 text-2xl font-bold text-gray-900 border-b border-gray-200 pb-3">
+                    Редагувати пост
+                </h1>
+                <form method="post" action="." class="space-y-5" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div>
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ form.title.label }} <span class="text-red-500">*</span></label>
+                        {{ form.title }}
+                        {% if form.title.errors %} <p class="text-red-600 text-xs mt-1">{{ form.title.errors|striptags }}</p> {% endif %}
+                    </div>
+
+                    {% if form.category %}
+                        <div>
+                            <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ form.category.label }} <span class="text-red-500">*</span></label>
+                            {{ form.category }}
+                            {% if form.category.errors %} <p class="text-red-600 text-xs mt-1">{{ form.category.errors|striptags }}</p> {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <div>
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ form.description.label }} <span class="text-red-500">*</span></label>
+                        {{ form.description }}
+                        {% if form.description.errors %} <p class="text-red-600 text-xs mt-1">{{ form.description.errors|striptags }}</p> {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ form.image.label }}</label>
+                        {% if post.image %}
+                            <div class="mb-2">
+                                <p class="text-xs text-gray-600">Поточне зображення:</p>
+                                <a href="{{ post.image.url }}" target="_blank">
+                                    <img src="{{ post.image.url }}" alt="Поточне зображення {{ post.title }}" class="max-h-48 w-auto rounded-md border border-gray-200 my-1 object-contain">
+                                </a>
+                            </div>
+                        {% endif %}
+                        {{ form.image }}
+                        {% if form.image.help_text %} <p class="text-xs text-gray-500 mt-1">{{ form.image.help_text|safe }}</p> {% endif %}
+                        {% if form.image.errors %} <p class="text-red-600 text-xs mt-1">{{ form.image.errors|striptags }}</p> {% endif %}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm space-y-1">
+                            {% for error in form.non_field_errors %}
+                                <p class="text-red-700">{{ error|escape }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="pt-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+                        <a href="{{ post.get_absolute_url }}" class="w-full sm:w-auto order-last sm:order-first text-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors duration-200">
+                            Скасувати
+                        </a>
+                        <button type="submit" class="w-full sm:w-auto py-2 px-5 rounded-lg text-gray-900 font-semibold bg-yellow-400 hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-colors duration-200 shadow-sm hover:shadow">
+                            Зберегти зміни
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

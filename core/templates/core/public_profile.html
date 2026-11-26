@@ -1,0 +1,101 @@
+{% extends 'core/main.html' %}
+{% load static i18n %}
+
+{% block title %}
+    {% if request.user == profile_user %}
+        {% trans "Мій Профіль" %}
+    {% else %}
+        {% trans "Профіль користувача" %} {{ profile_user.get_full_name|default:profile_user.username }}
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-slate-100 min-h-screen">
+    <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        
+        <!-- ======================= -->
+        <!-- Блок профілю -->
+        <!-- ======================= -->
+        <div class="relative bg-gradient-to-br from-gray-800 to-slate-900 rounded-2xl shadow-xl overflow-hidden mb-12 animate-fade-in">
+            <div class="absolute inset-0 bg-repeat bg-center opacity-[0.03]" style="background-image: url('{% static 'images/patterns/tech.svg' %}');"></div>
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-yellow-400/10 rounded-full filter blur-3xl"></div>
+            <div class="absolute -bottom-12 -left-12 w-48 h-48 bg-blue-500/10 rounded-full filter blur-3xl"></div>
+
+            <div class="relative p-8 md:p-10">
+                <div class="flex flex-col sm:flex-row items-center gap-x-8 gap-y-6">
+                    <!-- Аватар -->
+                    <div class="relative shrink-0">
+                        <img class="h-28 w-28 rounded-full object-cover ring-4 ring-white/10 shadow-lg" 
+                             src="{% if profile_user.profile.avatar %}{{ profile_user.profile.avatar.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}" alt="Avatar">
+                         {% if request.user == profile_user %}     
+                        <a href="{% url 'edit_myaccount' %}" class="group absolute -bottom-2 -right-2 bg-yellow-400 text-gray-900 h-10 w-10 rounded-full flex items-center justify-center shadow-md hover:bg-yellow-300 transition-all duration-300 transform hover:scale-110 hover:rotate-12" title="{% trans 'Змінити профіль' %}">
+                            <svg class="w-6 h-6 transition-transform duration-300 group-hover:rotate-[-12deg]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center sm:text-left flex-grow">
+                        <h1 class="text-3xl md:text-4xl font-bold text-white tracking-tight">{{ profile_user.get_full_name|default:profile_user.username }}</h1>
+                        <p class="mt-1 text-yellow-400 font-mono text-sm tracking-wide">@{{ profile_user.username }}</p>
+                        
+                        <div class="mt-5 pt-4 border-t border-white/10 flex flex-wrap justify-center sm:justify-start gap-x-6 gap-y-3 text-sm text-gray-300">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-bullhorn opacity-70"></i>
+                                <span><strong class="font-semibold text-white">{{ user_listings.count|default:0 }}</strong> {% trans "активних оголошень" %}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-calendar-alt opacity-70"></i>
+                                <span>{% trans "Учасник з" %} <strong class="font-semibold text-white">{{ profile_user.date_joined|date:"F Y" }}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- Секція з оголошеннями -->
+        <!-- ======================= -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 animate-fade-in" style="animation-delay: 0.2s;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">{% trans "Оголошення користувача" %}</h2>
+                {% if request.user == profile_user %}
+                    <a href="#" class="bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition-all text-sm">
+                        <i class="fas fa-plus mr-2"></i>{% trans "Створити нове" %}
+                    </a>
+                {% endif %}
+            </div>
+
+            {% if user_listings %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {% for listing in user_listings %}
+                        {# Включаємо частковий шаблон для картки оголошення #}
+                        {% include 'marketplace/partials/listing_card.html' %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-16 px-6 bg-gray-50 rounded-lg border border-dashed">
+                    <i class="fas fa-store-slash fa-4x text-gray-300 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-gray-700">{% trans "Поки що порожньо" %}</h3>
+                    <p class="mt-1 text-gray-500">{% trans "У цього користувача ще немає активних оголошень." %}</p>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

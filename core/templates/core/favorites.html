@@ -1,0 +1,83 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load custom_filters %} {# Загружаем фильтр для карточек, если он там нужен #}
+
+{% block title %}Моє Обране - ElectroHub{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-50 min-h-[calc(100vh-150px)] py-12 md:py-16 lg:py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-10 md:mb-14 border-b border-gray-200 pb-5">
+                Моє Обране
+            </h1>
+
+        {# --- Секція Обраних Товарів --- #}
+            {% if favorite_products %}
+                <section class="mb-12 md:mb-16">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Обрані товари</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                        {% for product in favorite_products %}
+                        {# Обертка для HTMX таргетинга #}
+                            <div id="favorite-item-product-{{ product.id }}">
+                            {# Включаем шаблон карточки, передавая is_favorite=True и source='favorites_page' #}
+                            {# Загрузка тега для использования get_item внутри include #}
+                                {% load custom_filters %}
+                                {% include 'product/partials/item_list_product.html' with product=product is_favorite=True source='favorites_page' %}
+                            </div>
+                        {% empty %}
+                        {# Этот блок не будет показан, если есть объявления #}
+                            {% if not favorite_listings %}
+                                <p class="sm:col-span-2 lg:col-span-3 xl:col-span-4 text-gray-600">У вас ще немає обраних товарів.</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+        {# --- Секція Обраних Оголошень --- #}
+            {% if favorite_listings %}
+                <section>
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Обрані оголошення</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                        {% for listing in favorite_listings %}
+                        {# Обертка для HTMX таргетинга #}
+                            <div id="favorite-item-listing-{{ listing.id }}">
+                             {# Включаем шаблон карточки, передавая is_favorite=True и source='favorites_page' #}
+                                {% load custom_filters %}
+                                {% include 'marketplace/partials/listing_card.html' with listing=listing is_favorite=True source='favorites_page' %}
+                            </div>
+                        {% empty %}
+                        {# Этот блок не будет показан, если есть товары #}
+                            {% if not favorite_products %}
+                                <p class="sm:col-span-2 lg:col-span-3 xl:col-span-4 text-gray-600">У вас ще немає обраних оголошень.</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+        {# --- Стан, коли обраного зовсім немає --- #}
+            {% if not favorite_products and not favorite_listings %}
+                <div class="text-center max-w-lg mx-auto py-16 px-4 bg-white rounded-xl shadow-md border border-gray-200/75">
+                    <div class="empty-favorites">
+                        <svg class="w-20 h-20 mx-auto mb-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"></path>
+                        </svg>
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-3">Ваш список обраного порожній</h3>
+                        <p class="text-gray-600 mb-8">Додайте товари або оголошення, які вам сподобалися.</p>
+                        <div class="flex flex-col sm:flex-row justify-center gap-4">
+                            <a href="{% url 'shop' %}"
+                               class="inline-block bg-yellow-400 text-gray-900 py-2.5 px-6 rounded-lg text-base font-semibold shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400">
+                                Перейти до магазину
+                            </a>
+                            <a href="/marketplace/"
+                               class="inline-block bg-yellow-400 text-gray-900 py-2.5 px-6 rounded-lg text-base font-semibold shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400">
+                                Перейти до приватних продажів
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

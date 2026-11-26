@@ -1,0 +1,365 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Оформлення Замовлення - ElectroHub{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-50 py-10 md:py-12 lg:py-16 min-h-[calc(100vh-150px)]">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"> {# Змінив max-w для кращого вигляду на середніх екранах #}
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-8 md:mb-10 border-b border-gray-200 pb-4">
+                Оформлення Замовлення
+            </h1>
+
+
+
+        {# --- Місце для клієнтських помилок JavaScript --- #}
+            <div id="checkout-client-errors" class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg hidden" role="alert">
+                <strong class="font-bold">Помилка валідації!</strong>
+                <span class="block sm:inline ml-1"></span>
+            </div>
+
+            <form id="checkout-form" method="post" action="{% url 'cart:checkout_process' %}"> {# Вказуємо action на process_checkout #}
+                {% csrf_token %}
+                <div class="lg:grid lg:grid-cols-12 lg:gap-x-8 xl:gap-x-12 lg:items-start">
+                    <div class="lg:col-span-7 space-y-6">
+                    {# Блок: Інформація про отримувача #}
+                        <section class="bg-white p-6 rounded-xl shadow-lg border border-gray-200/75">
+                            <h2 class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">Контактна інформація</h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                                <div>
+                                    <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">Ім'я <span class="text-red-500">*</span></label>
+                                    <input type="text" name="first_name" id="first_name" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                                           value="{{ form_data.first_name|default:request.user.first_name|default:'' }}">
+                                </div>
+                                <div>
+                                    <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Прізвище <span class="text-red-500">*</span></label>
+                                    <input type="text" name="last_name" id="last_name" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                                           value="{{ form_data.last_name|default:request.user.last_name|default:'' }}">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
+                                    <input type="email" name="email" id="email" required autocomplete="email"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                                           value="{{ form_data.email|default:request.user.email|default:'' }}">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Телефон <span class="text-red-500">*</span></label>
+                                    <input type="tel" name="phone" id="phone" required autocomplete="tel" placeholder="+380 XX XXX XX XX"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                                           value="{{ form_data.phone|default:'' }}">
+                                </div>
+                            </div>
+                        </section>
+
+                    {# Блок: Адреса доставки #}
+                        <section class="bg-white p-6 rounded-xl shadow-lg border border-gray-200/75">
+                            <h2 class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">Адреса доставки</h2>
+                            <div class="grid grid-cols-1 gap-y-4">
+                                <div>
+                                    <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Адреса (вулиця, будинок, квартира) <span class="text-red-500">*</span></label>
+                                    <input type="text" name="address" id="address" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                                           value="{{ form_data.address|default:'' }}">
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                                    <div>
+                                        <label for="city" class="block text-sm font-medium text-gray-700 mb-1">Місто <span class="text-red-500">*</span></label>
+                                        <input type="text" name="city" id="city" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                                               value="{{ form_data.city|default:'' }}">
+                                    </div>
+                                    <div>
+                                        <label for="zipcode" class="block text-sm font-medium text-gray-700 mb-1">Поштовий індекс</label>
+                                        <input type="text" name="zipcode" id="zipcode" pattern="[0-9]{5}" title="5-значний поштовий індекс"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                                               value="{{ form_data.zipcode|default:'' }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                {# --- ПРАВА КОЛОНКА: Підсумок та оплата --- #}
+                    <div class="lg:col-span-5 mt-8 lg:mt-0">
+                        <div class="sticky top-24 bg-white rounded-xl shadow-xl border border-gray-200/75 p-6"> {# top-24 для відступу від хедера, якщо він 80px + трохи ще #}
+                            <h2 class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
+                                Підсумок замовлення
+                            </h2>
+
+                            {% if cart %}
+                                <ul role="list" class="divide-y divide-gray-200 mb-4 max-h-60 overflow-y-auto simple-scrollbar">
+                                    {% for item_dict in cart %} {# Ітерація по об'єкту Cart #}
+                                        <li class="flex py-3">
+                                            <div class="flex-shrink-0">
+                                                <img src="{{ item_dict.product.get_thumbnail }}" alt="{{ item_dict.product.name }}" class="h-12 w-12 rounded-md border border-gray-200 object-cover">
+                                            </div>
+                                            <div class="ml-3 flex flex-1 flex-col">
+                                                <div>
+                                                    <div class="flex justify-between text-sm">
+                                                        <h3 class="font-medium text-gray-800 hover:text-yellow-600">
+                                                            <a href="{{ item_dict.product.get_absolute_url }}">{{ item_dict.product.name }}</a>
+                                                        </h3>
+                                                        <p class="ml-4 font-medium text-gray-900">{{ item_dict.total_price|floatformat:"0" }} ₴</p>
+                                                    </div>
+                                                    <p class="mt-1 text-xs text-gray-500">{{ item_dict.quantity }} x {{ item_dict.price|floatformat:"0" }} ₴</p>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+
+                            <dl class="border-t border-gray-200 pt-4 space-y-2">
+                                <div class="flex items-center justify-between text-base font-semibold text-gray-900">
+                                    <dt>До сплати:</dt>
+                                    <dd>{{ cart.get_total_cost|floatformat:"2" }} грн</dd>
+                                </div>
+                            </dl>
+
+                            <div class="mt-6 border-t border-gray-200 pt-4">
+                                <h3 class="text-sm font-medium text-gray-900 mb-2">Спосіб оплати <span class="text-red-500">*</span></h3>
+                                <fieldset>
+                                    <legend class="sr-only">Спосіб оплати</legend>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center">
+                                            <input id="payment_cash" name="payment_method" type="radio" value="cash"
+                                                   {% if not form_data.payment_method or form_data.payment_method == 'cash' %}checked{% endif %}
+                                                   class="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300">
+                                            <label for="payment_cash" class="ml-3 block text-sm font-medium text-gray-700 cursor-pointer">Готівка при отриманні</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input id="payment_card" name="payment_method" type="radio" value="card"
+                                                   {% if form_data.payment_method == 'card' %}checked{% endif %}
+                                                   class="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300">
+                                            <label for="payment_card" class="ml-3 block text-sm font-medium text-gray-700 cursor-pointer">Оплата карткою онлайн</label>
+                                        </div>
+                                    </div>
+                                    <div id="payment-method-error-message" class="text-xs text-red-500 mt-1 hidden">Будь ласка, оберіть спосіб оплати.</div>
+                                </fieldset>
+                            </div>
+
+                            <div class="mt-6">
+                                <button type="submit"
+                                        id="submit-checkout-button" {# Змінив ID для уникнення конфлікту з іншими кнопками #}
+                                        class="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-semibold text-gray-900 bg-yellow-400 hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-wait">
+                                    <span class="button-text">Підтвердити замовлення</span>
+                                    <svg class="animate-spin ml-2 h-5 w-5 text-gray-700 hidden button-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="mt-4 text-xs text-center text-gray-500">
+                                Натискаючи "Підтвердити замовлення", ви погоджуєтесь з <a href="#" class="font-medium text-yellow-600 hover:text-yellow-500">умовами обслуговування</a>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://js.stripe.com/v3/"></script> {# Завантаження Stripe.js #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkoutForm = document.getElementById('checkout-form');
+            const submitButton = document.getElementById('submit-checkout-button');
+            const clientErrorsDiv = document.getElementById('checkout-client-errors'); // Загальний блок помилок
+            const paymentMethodErrorMsg = document.getElementById('payment-method-error-message');
+
+    // Отримуємо ключ з контексту (переконайтеся, що він передається у view)
+            const stripePublicKey = "{{ stripe_public_key }}";
+
+            if (!checkoutForm || !submitButton) {
+                console.error("Форма оформлення або кнопка відправки не знайдені!");
+                return;
+            }
+
+            if (!stripePublicKey && document.querySelector('input[name="payment_method"][value="card"]')) {
+                console.warn("Stripe Publishable Key не встановлено, оплата карткою може не працювати.");
+        // Можна деактивувати опцію оплати карткою або показати попередження
+                const cardPaymentOption = document.getElementById('payment_card');
+                if (cardPaymentOption) {
+            // cardPaymentOption.disabled = true;
+            // cardPaymentOption.closest('div').querySelector('label').classList.add('text-gray-400', 'cursor-not-allowed');
+                }
+            }
+
+
+            checkoutForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                hideClientErrors(); // Сховуємо попередні клієнтські помилки
+
+                if (!validateClientForm()) { // Клієнтська валідація
+                    return;
+                }
+
+                startSubmitLoading();
+
+                const formData = new FormData(checkoutForm);
+                const dataForBackend = {};
+                formData.forEach((value, key) => { dataForBackend[key] = value; });
+                delete dataForBackend['csrfmiddlewaretoken']; // CSRF передається в заголовку
+
+                fetch(checkoutForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    },
+                    body: JSON.stringify(dataForBackend)
+                })
+                    .then(response => {
+            // Спочатку перевіряємо, чи відповідь взагалі JSON
+                        const contentType = response.headers.get("content-type");
+                        if (contentType && contentType.indexOf("application/json") !== -1) {
+                            return response.json().then(data => ({ ok: response.ok, status: response.status, data }));
+                        } else {
+                // Якщо не JSON, це, ймовірно, помилка HTML від сервера
+                            return response.text().then(text => Promise.reject(new Error(`Неочікувана відповідь сервера (не JSON, статус: ${response.status}). Відповідь: ${text.substring(0, 200)}...`)));
+                        }
+                    })
+                    .then(result => { // result тепер { ok, status, data }
+                        stopSubmitLoading();
+                        if (!result.ok) { // Якщо сервер повернув помилку (4xx, 5xx)
+                            throw new Error(result.data.error || `Помилка сервера: ${result.status}`);
+                        }
+
+            // Успішна відповідь від сервера
+                        if (result.data.session_id && stripePublicKey) {
+                            const stripe = Stripe(stripePublicKey);
+                            stripe.redirectToCheckout({ sessionId: result.data.session_id })
+                                .then(function (stripeRedirectResult) {
+                                    if (stripeRedirectResult.error) {
+                                        showClientError(stripeRedirectResult.error.message);
+                                        stopSubmitLoading();
+                                    }
+                                }).catch(function(error) {
+                                    console.error("Помилка redirectToCheckout:", error);
+                                    showClientError("Не вдалося перейти на сторінку оплати. Спробуйте ще раз.");
+                                    stopSubmitLoading();
+                                });
+                        } else if (result.data.success && result.data.redirect_url) {
+                            window.location.href = result.data.redirect_url; // Для готівки
+                        } else {
+                            throw new Error(result.data.error || "Не вдалося обробити відповідь від сервера (немає session_id або redirect_url).");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Помилка при оформленні замовлення:", error);
+                        showClientError(error.message || "Сталася непередбачена помилка. Будь ласка, спробуйте ще раз.");
+                        stopSubmitLoading();
+                    });
+            });
+
+            function validateClientForm() {
+                let isValid = true;
+                const requiredInputs = checkoutForm.querySelectorAll('input[required]');
+
+                requiredInputs.forEach(input => {
+                    const fieldContainer = input.closest('div'); // Батьківський div для повідомлення про помилку
+                    let errorMsgEl = fieldContainer.querySelector('.client-field-error');
+                    if (errorMsgEl) errorMsgEl.remove(); // Видаляємо старе повідомлення
+                    input.classList.remove('border-red-500');
+
+                    if (!input.value.trim()) {
+                        isValid = false;
+                        input.classList.add('border-red-500');
+                        errorMsgEl = document.createElement('p');
+                        errorMsgEl.className = 'text-xs text-red-500 mt-1 client-field-error';
+                        errorMsgEl.textContent = "Це поле є обов'язковим.";
+                        fieldContainer.appendChild(errorMsgEl);
+                    } else if (input.type === 'email' && !/\S+@\S+\.\S+/.test(input.value)) {
+                        isValid = false;
+                        input.classList.add('border-red-500');
+                        errorMsgEl = document.createElement('p');
+                        errorMsgEl.className = 'text-xs text-red-500 mt-1 client-field-error';
+                        errorMsgEl.textContent = "Невірний формат email.";
+                        fieldContainer.appendChild(errorMsgEl);
+                    } else if (input.type === 'tel' && !/^\+?[\d\s()-]{10,15}$/.test(input.value)) { // Трохи краща перевірка телефону
+                        isValid = false;
+                        input.classList.add('border-red-500');
+                        errorMsgEl = document.createElement('p');
+                        errorMsgEl.className = 'text-xs text-red-500 mt-1 client-field-error';
+                        errorMsgEl.textContent = "Невірний формат телефону (очікується 10-15 цифр, можливо з +).";
+                        fieldContainer.appendChild(errorMsgEl);
+                    }
+                });
+
+                const paymentMethodChecked = checkoutForm.querySelector('input[name="payment_method"]:checked');
+                if (paymentMethodErrorMsg) paymentMethodErrorMsg.classList.add('hidden');
+                if (!paymentMethodChecked) {
+                    isValid = false;
+                    if (paymentMethodErrorMsg) paymentMethodErrorMsg.classList.remove('hidden');
+                }
+
+                if (!isValid) {
+                    showClientError("Будь ласка, виправте помилки у формі.");
+                }
+                return isValid;
+            }
+
+            function startSubmitLoading() {
+                if (!submitButton) return;
+                submitButton.disabled = true;
+                const textEl = submitButton.querySelector('.button-text');
+                const spinnerEl = submitButton.querySelector('.button-spinner');
+                if (textEl) textEl.classList.add('hidden');
+                if (spinnerEl) spinnerEl.classList.remove('hidden');
+            }
+
+            function stopSubmitLoading() {
+                if (!submitButton) return;
+                submitButton.disabled = false;
+                const textEl = submitButton.querySelector('.button-text');
+                const spinnerEl = submitButton.querySelector('.button-spinner');
+                if (textEl) textEl.classList.remove('hidden');
+                if (spinnerEl) spinnerEl.classList.add('hidden');
+            }
+
+            function showClientError(message) {
+                if (!clientErrorsDiv) return;
+                const errorTextSpan = clientErrorsDiv.querySelector('span');
+                if (errorTextSpan) errorTextSpan.textContent = message;
+                clientErrorsDiv.classList.remove('hidden');
+                clientErrorsDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            function hideClientErrors() {
+                if (clientErrorsDiv) clientErrorsDiv.classList.add('hidden');
+                checkoutForm.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500'));
+                checkoutForm.querySelectorAll('.client-field-error').forEach(el => el.remove());
+                if (paymentMethodErrorMsg) paymentMethodErrorMsg.classList.add('hidden');
+            }
+
+    // Очищення помилок при зміні значень полів
+            checkoutForm.querySelectorAll('input[required], input[type="email"], input[type="tel"]').forEach(input => {
+                input.addEventListener('input', () => {
+                    if (input.value.trim() || (input.type === 'email' && /\S+@\S+\.\S+/.test(input.value)) || (input.type === 'tel' && /^\+?[\d\s()-]{10,15}$/.test(input.value)) ) {
+                        input.classList.remove('border-red-500');
+                        const errorLabel = input.closest('div').querySelector('.client-field-error');
+                        if (errorLabel) errorLabel.remove();
+                    }
+             // Якщо всі поля валідні, можна приховати загальну помилку
+                    if (clientErrorsDiv && !clientErrorsDiv.classList.contains('hidden')) {
+                 // Проста перевірка, чи є ще видимі помилки полів
+                        if (!checkoutForm.querySelector('.client-field-error')) {
+                            hideClientErrors();
+                        }
+                    }
+                });
+            });
+            checkoutForm.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (paymentMethodErrorMsg) paymentMethodErrorMsg.classList.add('hidden');
+                });
+            });
+
+        });
+    </script>
+{% endblock scripts %}

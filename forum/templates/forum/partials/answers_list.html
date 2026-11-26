@@ -1,0 +1,8 @@
+{% load static %}
+{% load custom_filters %}
+
+{% for answer in answers %}
+    {% include 'forum/partials/answer_recursive.html' with answer=answer request=request %}
+{% empty %}
+   {# Це повідомлення не повинно з'являтись при динамічному завантаженні #}
+{% endfor %}

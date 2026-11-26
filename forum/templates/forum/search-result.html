@@ -1,0 +1,107 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load custom_filters %} {# Потрібен для pluralize, хоча він є і вбудованим #}
+
+{% block title %}Результати пошуку: {{ search_query }}{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-50 py-12 md:py-16 lg:py-20 min-h-screen"> {# Фон та мін. висота #}
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Заголовок та кількість результатів -->
+            <div class="mb-8 md:mb-10 pb-5 border-b border-gray-200">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
+                    Результати пошуку для: "<span class="text-yellow-600">{{ search_query }}</span>"
+                </h1>
+                {% if q_count is not None %} {# Перевіряємо наявність q_count #}
+                    <p class="mt-1 text-sm text-gray-600">
+                        Знайдено результатів: <span class="font-semibold">{{ q_count }}</span>
+                    </p>
+                {% endif %}
+            </div>
+
+        <!-- Форма пошуку (можна повторити) -->
+            <div class="mb-8 md:mb-10">
+                <form action="{% url 'search-result' %}" method="get" class="flex items-center gap-2 md:gap-3 max-w-xl mx-auto">
+                    <label for="search-again" class="sr-only">Пошук по форуму</label>
+                    <input type="text" name="q" id="search-again"
+                           class="flex-grow py-2 px-4 bg-white rounded-lg border border-gray-300 focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400 focus:outline-none transition duration-150 ease-in-out shadow-sm text-sm placeholder:text-gray-400"
+                           placeholder="Пошук тем та повідомлень..."
+                           value="{{ search_query|default:'' }}">
+                    <button type="submit" class="px-4 py-2 rounded-lg text-gray-900 font-semibold bg-yellow-400 hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-yellow-400 transition-colors duration-200 shadow-sm text-sm shrink-0">
+                        <svg class="w-5 h-5 md:hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /> </svg>
+                        <span class="hidden md:inline">Пошук</span>
+                    </button>
+                </form>
+            </div>
+
+
+        <!-- Список результатів -->
+            <div class="space-y-6 md:space-y-8">
+                {% if queryset %} {# Використовуємо queryset замість q_count > 0 #}
+                    {% for topic in queryset %}
+                        <article class="bg-white rounded-xl shadow-md border border-gray-200/75 overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                            <div class="p-5 md:p-6">
+                        <!-- Заголовок -->
+                                <h2 class="text-xl font-semibold text-gray-900 hover:text-yellow-600 transition-colors duration-200 mb-2">
+                            {# Перевір назву URL, можливо 'topic-detail'? #}
+                                    <a href="{{ topic.get_absolute_url }}">
+                                        {{ topic.title }}
+                                    </a>
+                                </h2>
+
+                        <!-- Мета-інформація -->
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+                                    <span>Автор: <a href="#" class="hover:text-yellow-600 font-medium">{{ topic.author.user.username }}</a></span>
+                                    <span class="text-gray-300">•</span>
+                                    <span>Дата: <time datetime="{{ topic.date_created|date:"c" }}">{{ topic.date_created|date:"d.m.Y" }}</time></span>
+                                    {% if topic.category %}
+                                        <span class="text-gray-300">•</span>
+                                        <span>Категорія: <a href="{% url 'category-detail' topic.category.id %}" class="hover:text-yellow-600">{{ topic.category.name }}</a></span>
+                                    {% endif %}
+                                </div>
+
+                        <!-- Опис/Контент (якщо є) -->
+                                {% if topic.description %}
+                                    <p class="text-sm text-gray-700 leading-relaxed line-clamp-2"> {# line-clamp для обмеження #}
+                                        {{ topic.description|striptags }}
+                                    </p>
+                                {% endif %}
+
+                        <!-- Посилання "Детальніше" -->
+                                <div class="mt-4">
+                                    <a href="{{ topic.get_absolute_url }}" class="inline-flex items-center text-sm font-medium text-yellow-600 hover:text-yellow-700 group">
+                                        Детальніше
+                                        <svg class="ml-1 w-4 h-4 transform transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+
+                <!-- Пагінація (якщо потрібна) -->
+                {% comment %}
+                {% if page_obj and page_obj.has_other_pages %}
+                <nav class="mt-10 pt-6 border-t border-gray-200 flex items-center justify-between" aria-label="Pagination">
+                     ... (код пагінації) ...
+                </nav>
+                {% endif %}
+                {% endcomment %}
+
+                {% else %}
+                {# Стан, коли нічого не знайдено #}
+                    <div class="text-center py-16 px-6 bg-white rounded-lg border border-dashed border-gray-300">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM13.5 13.5h-6" /> </svg>
+                        <h3 class="mt-3 text-lg font-semibold text-gray-900">Нічого не знайдено</h3>
+                        <p class="mt-1 text-sm text-gray-600">Спробуйте змінити пошуковий запит або пошукати в інших розділах сайту.</p>
+                        <div class="mt-5">
+                            <a href="{% url 'forum' %}" class="inline-flex items-center rounded-md bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-gray-900 shadow-sm hover:bg-yellow-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-500">
+                                Повернутись до форуму
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}

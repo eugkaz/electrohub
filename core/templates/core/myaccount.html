@@ -1,0 +1,313 @@
+{% extends 'core/main.html' %}
+{% load static i18n humanize %}
+
+{% block title %}{% trans "Мій Акаунт" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tab-button {
+        @apply whitespace-nowrap py-4 px-2 border-b-2 font-semibold text-base border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-all duration-300 transform hover:-translate-y-0.5;
+    }
+    .tab-button.is-active {
+        @apply border-yellow-500 text-yellow-600;
+    }
+    .shine-on-hover {
+        position: relative;
+        overflow: hidden;
+    }
+    .shine-on-hover::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.6s ease-in-out;
+    }
+    .shine-on-hover:hover::before {
+        left: 100%;
+    }
+
+    /* Анимация плавного появления */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    /* Чтобы избежать "прыжка" контента */
+    [x-cloak] { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-slate-100 min-h-screen">
+    <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        
+        <!-- ======================= -->
+        <!-- Привітальний блок -->
+        <!-- ======================= -->
+        <div class="relative bg-gradient-to-br from-gray-900 to-slate-800 rounded-2xl shadow-2xl overflow-hidden mb-12 animate-fade-in">
+            <div class="absolute inset-0 bg-repeat bg-center opacity-[0.03]" style="background-image: url('{% static 'images/patterns/tech.svg' %}');"></div>
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-yellow-400/10 rounded-full filter blur-3xl"></div>
+            <div class="absolute -bottom-12 -left-12 w-48 h-48 bg-blue-500/10 rounded-full filter blur-3xl"></div>
+
+            <div class="relative p-8 md:p-12">
+                <div class="flex flex-col sm:flex-row items-center gap-x-8 gap-y-6">
+                    <div class="relative shrink-0">
+                        <img class="h-28 w-28 rounded-full object-cover ring-4 ring-white/10 shadow-lg" 
+                             src="{% if request.user.profile.avatar %}{{ request.user.profile.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" alt="Avatar">
+                        <a href="{% url 'edit_myaccount' %}" class="group absolute -bottom-2 -right-2 bg-yellow-400 text-gray-900 h-10 w-10 rounded-full flex items-center justify-center shadow-md hover:bg-yellow-300 transition-all duration-300 transform hover:scale-110 hover:rotate-12" title="{% trans 'Змінити профіль' %}">
+                            <svg class="w-6 h-6 transition-transform duration-300 group-hover:rotate-[-12deg]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                        </a>
+                    </div>
+                    <!-- Основная информация и статистика -->
+                    <div class="text-center md:text-left flex-grow">
+                        <p class="text-lg font-medium text-gray-400">{% trans "Ласкаво просимо," %}</p>
+                        <h1 class="text-3xl md:text-4xl font-bold text-white tracking-tight">{{ request.user.get_full_name|default:request.user.username }}</h1>
+                        <p class="mt-1 text-yellow-400 font-mono text-sm tracking-wide">{{ request.user.email }}</p>
+                        
+                        <!-- Статистика -->
+                        <div class="mt-5 pt-4 border-t border-white/10 flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-3 text-sm text-gray-300">
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H4.78l-.387-1.55A1 1 0 003 1z" /></svg>
+                                <span><strong class="font-semibold text-white">{{ user_orders.count|default:0 }}</strong> {% trans "замовлень" %}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a1 1 0 011-1h5a1 1 0 011 1v1h1V5a1 1 0 011-1h5a1 1 0 011 1v4.293zM16 6a1 1 0 00-1-1h-3v2h3a1 1 0 001-1zM6 6a1 1 0 00-1-1H3v2h3a1 1 0 001-1z" clip-rule="evenodd" /></svg>
+                                <span><strong class="font-semibold text-white">{{ listings.count|default:0 }}</strong> {% trans "оголошень" %}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" /></svg>
+                                <span>{% trans "Учасник з" %} <strong class="font-semibold text-white">{{ request.user.date_joined|date:"F Y" }}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    {% if request.user.is_superuser or request.user.is_staff %}
+                    <div class="sm:ml-auto shrink-0 pt-4 sm:pt-0">
+                        <a href="{% url 'administration:dashboard' %}" target="_blank" class="shine-on-hover inline-flex items-center px-5 py-2.5 bg-white/10 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-white/20 transition-colors duration-300 transform hover:-translate-y-0.5">
+                            <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.5a.75.75 0 001.5 0v-8.5z" /><path fill-rule="evenodd" d="M9.664 2.052a.75.75 0 01.672 0l6.25 2.5a.75.75 0 010 1.396l-6.25 2.5a.75.75 0 01-.672 0l-6.25-2.5a.75.75 0 010-1.396l6.25-2.5zM3.236 6.22l6.25 2.5a.75.75 0 00.528 0l6.25-2.5a.75.75 0 01.972.698v4.284a.75.75 0 01-1.5 0V7.569l-5.44 2.176a.75.75 0 01-.528 0L3.764 7.57V11.2a.75.75 0 01-1.5 0V6.918a.75.75 0 01.972-.698z" clip-rule="evenodd" /><path d="M1.75 14.25a.75.75 0 01.75-.75h15a.75.75 0 010 1.5h-15a.75.75 0 01-.75-.75z" /></svg>
+                            {% trans "Адмін Панель" %}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- Основний контент з табами -->
+        <!-- ======================= -->
+        <div x-data="{ activeTab: new URLSearchParams(window.location.search).get('tab') || 'orders' }" x-cloak>
+            <!-- Навігація по табам -->
+            <div class="border-b relative bg-gradient-to-br from-gray-900 to-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-fade-in border-yellow-400">
+    <nav class="flex space-x-4 overflow-x-auto px-4 py-3 sm:space-x-6" aria-label="Tabs">
+        <button
+            @click="activeTab = 'orders'; updateUrl('orders')"
+            :class="[activeTab === 'orders' ? 'tab-button-active' : '', 'shine-on-hover']"
+            class="whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold border border-transparent text-white hover:bg-yellow-500 transition-all duration-300">
+            {% trans "Мої Замовлення" %}
+        </button>
+
+        <button
+            @click="activeTab = 'transport'; updateUrl('transport')"
+            :class="[activeTab === 'transport' ? 'tab-button-active' : '', 'shine-on-hover']"
+            class="whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold border border-transparent text-white hover:bg-yellow-500 transition-all duration-300">
+            {% trans "Мій Транспорт" %}
+        </button>
+
+        <button
+            @click="activeTab = 'listings'; updateUrl('listings')"
+            :class="[activeTab === 'listings' ? 'tab-button-active' : '', 'shine-on-hover']"
+            class="whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold border border-transparent text-white hover:bg-yellow-500 transition-all duration-300">
+            {% trans "Мої Оголошення" %}
+        </button>
+
+        <button
+            @click="activeTab = 'forum'; updateUrl('forum')"
+            :class="[activeTab === 'forum' ? 'tab-button-active' : '', 'shine-on-hover']"
+            class="whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold border border-transparent text-white hover:bg-yellow-500 transition-all duration-300">
+            {% trans "Мої Теми на Форумі" %}
+        </button>
+    </nav>
+</div>
+
+            <!-- Контейнер для контенту табів -->
+            <div class="bg-white rounded-b-lg shadow-lg mt-0 p-6 sm:p-8 md:p-10 border border-t-0 border-gray-200/75 min-h-[400px]">
+                
+                <!-- ВКЛАДКА: ЗАМОВЛЕННЯ -->
+                <div x-show="activeTab === 'orders'" x-transition.opacity.duration.500ms>
+                    {% if user_orders %}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{% trans "Замовлення" %}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{% trans "Дата" %}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{% trans "Сума" %}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{% trans "Статус" %}</th>
+                                        <th scope="col" class="relative px-6 py-3"><span class="sr-only">{% trans "Дії" %}</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for order in user_orders %}
+                                        <tr class="hover:bg-slate-50 transition-colors duration-200">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">#{{ order.id }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ order.created_at|date:"d M Y" }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{{ order.total_price|floatformat:"2" }} {{ order.currency }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    {% if order.status == OrderStatus.COMPLETED %} bg-green-100 text-green-800
+                                                    {% elif order.status == OrderStatus.CANCELLED or order.status == OrderStatus.PAYMENT_FAILED %} bg-red-100 text-red-800
+                                                    {% elif order.status == OrderStatus.PENDING %} bg-yellow-100 text-yellow-800
+                                                    {% else %} bg-blue-100 text-blue-800 {% endif %}">
+                                                    {{ order.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <a href="{% url 'cart:order_detail' order.id %}" class="text-indigo-600 hover:text-indigo-900 font-bold">{% trans "Деталі" %} →</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        {% include 'core/partials/_empty_state.html' with icon_name="orders" title="У вас ще немає замовлень" subtitle="Зробіть своє перше замовлення, щоб побачити його тут." button_text="До каталогу товарів" button_url_name="shop" %}
+                    {% endif %}
+                </div>
+
+                <!-- ВКЛАДКА: ТРАНСПОРТ -->
+                <div x-show="activeTab === 'transport'" x-transition.opacity.duration.500ms style="display: none;">
+                    {% if vehicles %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {% for vehicle in vehicles %}
+                                <a href="{% url 'transport:vehicle_details' vehicle.pk %}" class="group block bg-white rounded-xl border p-5 transition-all duration-300 hover:shadow-xl hover:border-yellow-400 hover:-translate-y-1">
+                                    <div class="flex items-center gap-4 mb-4">
+                                        <div>
+                                            <h3 class="font-bold text-lg text-gray-800 group-hover:text-yellow-600 transition-colors">{{ vehicle.name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ vehicle.model }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between items-end">
+                                            <span class="font-semibold text-gray-700">{% trans "Заряд" %}:</span> 
+                                            <span class="font-bold text-xl {% if vehicle.battery_percentage < 20 %}text-red-500{% elif vehicle.battery_percentage < 60 %}text-yellow-500{% else %}text-green-500{% endif %}">{{ vehicle.battery_percentage }}%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5"><div class="bg-gradient-to-r {% if vehicle.battery_percentage < 20 %}from-red-500 to-orange-500{% elif vehicle.battery_percentage < 60 %}from-yellow-400 to-amber-500{% else %}from-green-400 to-emerald-500{% endif %} h-2.5 rounded-full transition-all duration-500" style="width: {{ vehicle.battery_percentage }}%"></div></div>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-4 text-right">{% trans "Оновлено" %}: {{ vehicle.last_updated|timesince }} {% trans "тому" %}</p>
+                                </a>
+                            {% endfor %}
+                            <a href="{% url 'transport:connect_vehicle' %}" class="flex flex-col items-center justify-center p-5 rounded-xl border-2 border-dashed border-gray-300 text-gray-400 hover:border-green-500 hover:text-green-600 transition-all duration-300 hover:bg-green-50 group">
+                                <svg class="h-12 w-12 mb-2 transition-transform group-hover:scale-110" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                <span class="font-semibold">{% trans "Підключити новий" %}</span>
+                            </a>
+                        </div>
+                    {% else %}
+                        {% include 'core/partials/_empty_state.html' with icon_name="transport" title="У вас немає підключеного транспорту" subtitle="Підключіть свій транспорт, щоб стежити за його станом." button_text="Підключити транспорт" button_url_name="transport:connect_vehicle" %}
+                    {% endif %}
+                </div>
+
+                <!-- ВКЛАДКА: ОГОЛОШЕННЯ -->
+                <div x-show="activeTab === 'listings'" x-transition.opacity.duration.500ms style="display: none;">
+                    {% if listings %}
+                        <div class="space-y-4">
+                            {% for listing in listings %}
+                                <div class="bg-white rounded-lg border p-4 flex flex-col sm:flex-row gap-4 transition-all duration-300 hover:shadow-lg hover:border-yellow-400 hover:-translate-y-1 group">
+                                    {% if listing.images.first %}
+                                    <a href="{% url 'listing_detail' listing.id %}" class="block w-full sm:w-48 h-32 sm:h-auto flex-shrink-0 rounded-md overflow-hidden bg-gray-200">
+                                        <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                                    </a>
+                                    {% endif %}
+                                    <div class="flex-grow">
+                                        <a href="{% url 'listing_detail' listing.id %}"><h3 class="text-lg font-semibold text-gray-800 group-hover:text-yellow-600 transition-colors">{{ listing.title }}</h3></a>
+                                        <p class="text-xs text-gray-500 mt-1">{% trans "Додано" %}: {{ listing.created_at|date:"d M Y" }} | {{ listing.city }}</p>
+                                        <p class="text-sm text-gray-600 mt-2 line-clamp-2">{{ listing.description }}</p>
+                                    </div>
+                                    <div class="flex-shrink-0 text-left sm:text-right pt-2 sm:pt-0 flex flex-col items-start sm:items-end justify-between">
+                                        <span class="block text-xl font-bold text-gray-900">{{ listing.price|intcomma }} {{ listing.currency_symbol }}</span>
+                                        <span class="mt-2 inline-block px-2 py-0.5 text-xs font-medium rounded-full
+                                             {% if listing.status == 'active' %} bg-green-100 text-green-800
+                                             {% elif listing.status == 'sold' %} bg-gray-200 text-gray-500
+                                             {% else %} bg-yellow-100 text-yellow-800 {% endif %}">
+                                            {{ listing.get_status_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            <div class="mt-6 text-center">
+                                <a href="#" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">{% trans "Переглянути всі оголошення" %} →</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        {% include 'core/partials/_empty_state.html' with icon_name="listings" title="У вас немає активних оголошень" subtitle="Хочете щось продати? Створіть оголошення!" button_text="Створити оголошення" button_url_name="create_listing_url_name" %}
+                    {% endif %}
+                </div>
+
+                <!-- ВКЛАДКА: ФОРУМ -->
+                <div x-show="activeTab === 'forum'" x-transition.opacity.duration.500ms style="display: none;">
+                     {% if forum_topics %}
+                        <ul class="space-y-3">
+                            {% for topic in forum_topics %}
+                                <li class="group flex flex-col sm:flex-row justify-between sm:items-center p-4 bg-white rounded-lg border transition-all duration-300 hover:border-yellow-400 hover:shadow-md hover:-translate-y-1 gap-3">
+                                    <div class="flex-grow min-w-0">
+                                        <a href="{{ topic.get_absolute_url }}" class="text-base font-medium text-gray-800 group-hover:text-yellow-600 transition-colors duration-200 line-clamp-1" title="{{ topic.title }}">{{ topic.title }}</a>
+                                        <span class="block text-xs text-gray-500 mt-1">{% trans "Створено" %}: {{ topic.date_created|date:"d M Y, H:i" }}</span>
+                                    </div>
+                                    <div class="flex flex-shrink-0 items-center space-x-5 text-sm text-gray-600 sm:text-right">
+                                        <span class="inline-flex items-center gap-1.5" title="Відповіді">
+                                            <svg class="w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
+                                            {{ topic.answer_count }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-1.5" title="Перегляди">
+                                            <svg class="w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                            {{ topic.topic_view_count }}
+                                        </span>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="mt-6 text-center">
+                            <a href="{% url 'forum' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">{% trans "Перейти до форуму" %} →</a>
+                        </div>
+                    {% else %}
+                        {% include 'core/partials/_empty_state.html' with icon_name="forum" title="Ви ще не створили жодної теми" subtitle="Почніть обговорення на форумі, щоб поділитись думками!" button_text="Перейти до форуму" button_url_name="forum" %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<script>
+// Цей скрипт керує станом активної вкладки
+// та оновлює URL, щоб можна було ділитися посиланнями на конкретну вкладку.
+function updateUrl(tabName) {
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.pushState({}, '', url);
+}
+
+// Слухаємо зміни в історії браузера (кнопки "назад"/"вперед")
+// і оновлюємо активну вкладку відповідно до URL.
+window.addEventListener('popstate', () => {
+    const alpineComponent = document.querySelector('[x-data]');
+    if (alpineComponent && alpineComponent.__x) {
+        const tabNameFromUrl = new URLSearchParams(window.location.search).get('tab') || 'orders';
+        alpineComponent.__x.data.activeTab = tabNameFromUrl;
+    }
+});
+</script>
+{% endblock %}

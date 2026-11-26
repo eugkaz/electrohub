@@ -1,0 +1,301 @@
+{% extends 'core/main.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+{% load custom_filters %} {# Убедитесь, что этот тег загружен и ваш фильтр get_item доступен #}
+
+{% block title %}{% trans "Приватні продажі" %} | ElectroHub{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+    <style>
+        :root { --primary: #facc15; --accent: #eab308; }
+
+    /* --- Swiper Card Styles --- */
+        .listing-card-swiper .swiper-pagination { bottom: 6px !important; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
+        .listing-card-swiper-container:hover .swiper-pagination { opacity: 1; pointer-events: auto; }
+        .listing-card-swiper .swiper-pagination-bullet { width: 6px; height: 6px; background-color: rgba(0, 0, 0, 0.3); opacity: 1; }
+        .listing-card-swiper .swiper-pagination-bullet-active { background-color: var(--primary); transform: scale(1.1); }
+        .listing-card-swiper .swiper { height: 100%; } /* Для корректного заполнения высоты родителя */
+
+    /* --- Filter Sidebar Styles --- */
+        .filter-sidebar::-webkit-scrollbar { width: 5px; }
+        .filter-sidebar::-webkit-scrollbar-track { background: #f8fafc; }
+        .filter-sidebar::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+        .filter-sidebar::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
+
+    /* --- Alpine --- */
+        [x-cloak] { display: none !important; }
+
+    /* --- Filters --- */
+        .filter-section-title { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 0.6rem 0.25rem; font-size: 0.875rem; font-weight: 600; color: #1f2937; cursor: pointer; border-bottom: 1px solid #f3f4f6; margin-bottom: 0.75rem; }
+        .filter-section-title:hover { color: #000; }
+        .filter-section-title svg { transition: transform 0.2s ease-out; color: #9ca3af; }
+        .filter-section-title[aria-expanded="false"] svg { transform: rotate(-90deg); }
+        .filter-link { display: block; font-size: 0.875rem; padding: 0.35rem 0.5rem; border-radius: 0.375rem; transition: background-color 0.15s ease, color 0.15s ease; margin-bottom: 2px;}
+        .filter-link.active { color: #854d0e; font-weight: 500; background-color: #fefce8; }
+        .filter-link:not(.active) { color: #4b5563; }
+        .filter-link:not(.active):hover { background-color: #f9fafb; color: #1f2937; }
+        .filter-radio-label { display: flex; align-items: center; font-size: 0.875rem; color: #4b5563; cursor: pointer; padding: 0.35rem 0; }
+        .filter-radio-label:hover { color: #1f2937; }
+        .filter-radio { height: 1rem; width: 1rem; border-color: #d1d5db; color: var(--primary); focus:ring-var(--primary); margin-right: 0.6rem; cursor: pointer; }
+        .price-input { width: 100%; padding: 0.5rem 0.75rem; font-size: 0.875rem; border: 1px solid #d1d5db; border-radius: 0.5rem; transition: border-color 0.15s ease, box-shadow 0.15s ease; appearance: textfield; }
+        .price-input::-webkit-outer-spin-button, .price-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .price-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.3); }
+
+    /* --- Buttons --- */
+        .btn { display: inline-flex; justify-content: center; align-items: center; padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s ease; cursor: pointer; text-align: center; border: 1px solid transparent; line-height: 1.25rem;}
+        .btn-primary { background-color: var(--primary); color: #422006; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
+        .btn-primary:hover { background-color: var(--accent); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); transform: translateY(-1px);}
+        .btn-secondary { background-color: #fff; color: #374151; border-color: #d1d5db; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
+        .btn-secondary:hover { background-color: #f9fafb; border-color: #9ca3af; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.75rem; }
+
+    /* --- FAB Pulse --- */
+        @keyframes fab-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.5); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); } 80% { transform: scale(1.05); } 90% { transform: scale(0.98); } }
+        .animate-fab-pulse:hover { animation: fab-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1); }
+
+    /* --- Grid layout --- */
+        .listings-grid { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 1.25rem; }
+        @media (min-width: 640px) { .listings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (min-width: 1024px) { .listings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } /* Для lg:col-span-9 это скорее 2 или 3 колонки */
+        @media (min-width: 1280px) { .listings-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; } } /* Для xl */
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-50" x-data="{ mobileFiltersOpen: false }">
+        <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-8 text-center lg:text-left lg:py-10">
+                <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                    {% if selected_category %}{{ selected_category.name }}{% else %}{% endif %}
+                </h1>
+            </div>
+
+            <div class="lg:grid lg:grid-cols-12 lg:gap-x-8">
+                <aside class="hidden lg:block lg:col-span-3">
+                    <div class="sticky top-24 space-y-6 filter-sidebar max-h-[calc(100vh-120px)] overflow-y-auto pr-3 pb-6">
+                        <h2 class="text-base font-semibold text-gray-900 px-1">{% trans "Фільтри" %}</h2>
+                        <form method="get" action="{{ request.path }}" id="desktop-filter-form" class="space-y-6">
+                            <div class="px-1">
+                                <label for="sidebar-search-mkt" class="sr-only">{% trans "Пошук" %}</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"> <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 20 20"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="1.5" stroke="currentColor" d="M15.5 15.5L19 19M17 9.5a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z"></path></svg></div>
+                                    <input type="search" name="q" id="sidebar-search-mkt" placeholder="{% trans 'Пошук...' %}" value="{{ search_query|default:'' }}" class="w-full py-2 pl-10 pr-4 bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none transition text-sm shadow-sm">
+                                </div>
+                            </div>
+                            {% if categories %}
+                                <div class="px-1 border-t border-gray-200 pt-4" x-data="{ open: {{ selected_category|yesno:'true,true,false' }} }">
+                                    <button type="button" @click="open = !open" class="filter-section-title !border-none !mb-2" aria-controls="filter-section-mkt-category" :aria-expanded="open.toString()">
+                                        <span>{% trans "Категорія" %}</span>
+                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                    <div x-show="open" x-transition class="space-y-1 max-h-60 overflow-y-auto sidebar-scrollbar pr-1" id="filter-section-mkt-category">
+                                        {% query_params category=None page=None as all_cat_params %}
+                                        <a href="?{{ all_cat_params }}" class="filter-link {% if not selected_category %}active{% endif %}">{% trans "Всі категорії" %}</a>
+                                        {% for category_item in categories %}
+                                            {% query_params category=category_item.slug page=None as cat_params %}
+                                            <a href="?{{ cat_params }}" class="filter-link {% if selected_category.slug == category_item.slug %}active{% endif %}"> {{ category_item.name }} <span class="text-xs text-gray-400">({{ category_item.num_listings }})</span></a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <div class="border-t border-gray-200 pt-4 px-1">
+                                <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Ціна" %}</h3>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" name="min_price" placeholder="{% trans 'Від' %}" value="{{ min_price|default:'' }}" class="price-input" min="0">
+                                    <span class="text-gray-400 text-sm">–</span>
+                                    <input type="number" name="max_price" placeholder="{% trans 'До' %}" value="{{ max_price|default:'' }}" class="price-input" min="0">
+                                </div>
+                            </div>
+                            {% if condition_choices %}
+                                <div class="border-t border-gray-200 pt-4 px-1" x-data="{ open: {{ selected_condition|yesno:'true,true,false' }} }">
+                                    <button type="button" @click="open = !open" class="filter-section-title !border-none !mb-2" aria-controls="filter-section-mkt-condition" :aria-expanded="open.toString()">
+                                        <span>{% trans "Стан" %}</span>
+                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                    <div x-show="open" x-transition class="space-y-1 pr-1" id="filter-section-mkt-condition">
+                                        {% query_params condition="" page=None as all_cond_params %}
+                                        <a href="?{{ all_cond_params }}" class="filter-link {% if not selected_condition %}active{% endif %}">{% trans "Будь-який" %}</a>
+                                        {% for value, label in condition_choices %}
+                                            {% query_params condition=value page=None as cond_params %}
+                                            <a href="?{{ cond_params }}" class="filter-link {% if selected_condition == value %}active{% endif %}"> {{ label }} </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <div class="border-t border-gray-200 pt-4 px-1">
+                                <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Сортувати за" %}</h3>
+                                <div class="space-y-1">
+                                    {% for value, label in sort_options.items %}
+                                        <label class="filter-radio-label">
+                                            <input type="radio" name="sort" value="{{ value }}" {% if current_sort == value %}checked{% endif %} class="filter-radio" form="desktop-filter-form" onchange="this.form.submit()">
+                                            {{ label }}
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="pt-5 space-y-3 px-1 border-t border-gray-200">
+                                <button type="submit" form="desktop-filter-form" class="btn btn-primary w-full">{% trans "Застосувати" %}</button>
+                                {% if request.GET %}
+                                    <a href="{{ request.path }}" class="btn btn-secondary w-full">{% trans "Скинути все" %}</a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </aside>
+
+                <main class="lg:col-span-9">
+                    <div class="mb-6 flex items-center justify-between">
+                        <p class="text-sm text-gray-600">
+                            {% with total_listings=listings.count %}
+                                {% blocktrans count counter=total_listings %}
+                                    Знайдено {{ counter }} оголошення
+                                {% plural %}
+                                    Знайдено {{ counter }} оголошень
+                                {% endblocktrans %}
+                            {% endwith %}
+                            {% if selected_category %} {% trans "в категорії" %} "{{ selected_category.name }}"{% endif %}
+                            {% if search_query %} {% trans "за запитом" %} "{{ search_query }}"{% endif %}
+                        </p>
+                        <div class="lg:hidden">
+                            <button @click="mobileFiltersOpen = true" type="button" class="btn btn-secondary btn-sm">
+                                <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 12h9.75m-9.75 6h9.75M3.75 6h1.5m1.5 0h1.5m-1.5 0V4.5m1.5 1.5V19.5m-1.5-6h1.5m1.5 0h1.5m-1.5 0V10.5m1.5 1.5V19.5m-1.5-6h1.5m1.5 0h1.5m-1.5 0V4.5" /></svg>
+                                {% trans "Фільтри та Сортування" %}
+                            </button>
+                        </div>
+                    </div>
+
+                    {% if listings %}
+                        <div class="listings-grid">
+                            {% for listing_item in listings %}
+                                {% include 'marketplace/partials/listing_card.html' with listing=listing_item request=request favorite_status_dict=favorite_status source='list' %}
+                            {% endfor %}
+                        </div>
+                        {% if listings.has_other_pages %}
+                            <div class="mt-10">
+                                {% include 'core/partials/pagination.html' with page_obj=listings %}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-16 px-6 bg-white rounded-lg shadow-md border border-dashed border-gray-300"> <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM13.5 13.5h-6" /> </svg> <h3 class="mt-4 text-lg font-semibold text-gray-900">{% trans "На жаль, оголошень не знайдено" %}</h3> <p class="mt-1 text-sm text-gray-600">{% trans "Спробуйте змінити фільтри або пошуковий запит." %}</p> <div class="mt-6"> <a href="{% url 'marketplace-view' %}" class="btn btn-primary"> {% trans "Скинути всі фільтри" %} </a> </div> </div>
+                    {% endif %}
+                </main>
+
+                <div x-show="mobileFiltersOpen" x-cloak class="relative z-50 lg:hidden" role="dialog" aria-modal="true">
+                    <div class="fixed inset-0 bg-black bg-opacity-25 transition-opacity duration-300 ease-linear"
+                         x-show="mobileFiltersOpen"
+                         x-transition:enter="transition-opacity-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition-opacity-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
+                    <div class="fixed inset-y-0 right-0 z-50 flex w-full max-w-xs">
+                        <div class="relative ml-auto flex h-full w-full max-w-xs flex-col overflow-y-auto bg-white py-4 pb-6 shadow-xl filter-sidebar"
+                             x-show="mobileFiltersOpen"
+                             @click.outside="mobileFiltersOpen = false"
+                             x-transition:enter="transition ease-in-out duration-300 transform" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+                             x-transition:leave="transition ease-in-out duration-300 transform" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">
+                            <div class="flex items-center justify-between px-4 mb-4">
+                                <h2 class="text-lg font-medium text-gray-900">{% trans "Фільтри" %}</h2>
+                                <button type="button" @click="mobileFiltersOpen = false" class="-mr-2 flex h-10 w-10 items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100">
+                                    <span class="sr-only">{% trans "Закрити меню" %}</span>
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                            <form method="get" action="{{ request.path }}" id="mobile-filter-form" class="mt-4 border-t border-gray-200 px-4 py-6 space-y-6">
+                                <input type="hidden" name="q" value="{{ search_query|default:'' }}">
+                                {% if categories %}
+                                    <div> <h3 class="filter-section-title !pb-1 !mb-2 !text-sm !border-none">{% trans "Категорія" %}</h3> <div class="space-y-1 max-h-48 overflow-y-auto filter-sidebar pr-1">
+                                        {% query_params category=None page=None as all_cat_params_mob %}
+                                        <a href="?{{ all_cat_params_mob }}" class="filter-link {% if not selected_category %}active{% endif %}">{% trans "Всі категорії" %}</a>
+                                        {% for category_item in categories %}
+                                            {% query_params category=category_item.slug page=None as cat_params_mob %}
+                                            <a href="?{{ cat_params_mob }}" class="filter-link {% if selected_category.slug == category_item.slug %}active{% endif %}">{{ category_item.name }} <span class="text-xs text-gray-400">({{ category_item.num_listings }})</span></a>
+                                        {% endfor %}
+                                    </div> </div>
+                                {% endif %}
+                               {# --- Блок Цены --- #}
+                                <div class="border-t border-gray-200 pt-4 px-1">
+                                    <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Ціна" %}</h3>
+                                    <div class="grid grid-cols-2 gap-2 mb-2">
+                                        <input type="number" name="min_price" placeholder="{% trans 'Від' %}" value="{{ min_price|default:'' }}" class="price-input" min="0" step="any">
+                                        <input type="number" name="max_price" placeholder="{% trans 'До' %}" value="{{ max_price|default:'' }}" class="price-input" min="0" step="any">
+                                    </div>
+                                    <div>
+                                        <label for="filter_currency" class="sr-only">{% trans "Валюта для ціни" %}</label>
+                                        <select name="filter_currency" id="filter_currency" class="w-full py-2 px-3 bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none transition text-sm shadow-sm">
+                                            {% for code, name_display in currency_choices %}
+                                                <option value="{{ code }}" {% if code == selected_filter_currency %}selected{% endif %}>{{ name_display }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {% if condition_choices %}
+                                    <div class="border-t border-gray-200 pt-4"> <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Стан" %}</h3> <div class="space-y-1">
+                                        {% query_params condition="" page=None as all_cond_params_mob %}
+                                        <a href="?{{ all_cond_params_mob }}" class="filter-link {% if not selected_condition %}active{% endif %}">{% trans "Будь-який" %}</a>
+                                        {% for value, label in condition_choices %}
+                                            {% query_params condition=value page=None as cond_params_mob %}
+                                            <a href="?{{ cond_params_mob }}" class="filter-link {% if selected_condition == value %}active{% endif %}">{{ label }}</a>
+                                        {% endfor %}
+                                    </div> </div>
+                                {% endif %}
+                                <div class="border-t border-gray-200 pt-4"> <h3 class="text-sm font-semibold text-gray-800 mb-2">{% trans "Сортування" %}</h3> <div class="space-y-1"> {% for value, label in sort_options.items %} <label class="filter-radio-label"> <input type="radio" name="sort" value="{{ value }}" {% if current_sort == value %}checked{% endif %} class="filter-radio" form="mobile-filter-form"> {{ label }} </label> {% endfor %} </div> </div>
+                                <div class="pt-6 border-t border-gray-200 space-y-3"> <button type="submit" @click="mobileFiltersOpen = false" form="mobile-filter-form" class="btn btn-primary w-full">{% trans "Застосувати" %}</button> <a href="{{ request.path }}" @click="mobileFiltersOpen = false" class="btn btn-secondary w-full">{% trans "Скинути все" %}</a> </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <a href="{% url 'listing_create' %}" title="{% trans 'Створити оголошення' %}"
+           class="animate-fab-pulse fixed bottom-6 right-6 z-30 inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-[var(--primary)] text-gray-900 rounded-full shadow-xl hover:bg-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)] transition-all duration-200 transform hover:scale-110">
+            <span class="sr-only">{% trans "Створити оголошення" %}</span>
+            <svg class="w-7 h-7 md:w-8 md:h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /> </svg>
+        </a>
+    </div>
+{% endblock content %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        function initializeCardSwipers() {
+            const swiperContainers = document.querySelectorAll('.listing-card-swiper');
+            swiperContainers.forEach(container => {
+                const paginationElement = container.querySelector('.swiper-pagination');
+                const slides = container.querySelectorAll('.swiper-wrapper > .swiper-slide');
+
+                if (container.swiperInstance) {
+                    container.swiperInstance.destroy(true, true);
+                    container.swiperInstance = null;
+                }
+
+                if (slides.length > 1) {
+                    if(paginationElement) paginationElement.style.display = 'block';
+                    container.swiperInstance = new Swiper(container, {
+                        loop: true,
+                        effect: 'fade',
+                        fadeEffect: { crossFade: true },
+                        pagination: { el: paginationElement, clickable: true },
+                        autoplay: { delay: 5000, disableOnInteraction: true, pauseOnMouseEnter: true },
+                        grabCursor: true,
+                        observer: true, observeParents: true,
+                    });
+                } else if (paginationElement) {
+                    paginationElement.style.display = 'none';
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            initializeCardSwipers();
+            document.body.addEventListener('htmx:afterSwap', function(event) {
+                if (event.detail.target.querySelector('.listing-card-swiper') || event.detail.target.classList.contains('listing-card-swiper')) {
+                    initializeCardSwipers();
+                }
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends 'administration/base_admin.html' %}
+{% load static %}
+{% load widget_tweaks %} {# Для стилізації полів форми, встановіть django-widget-tweaks #}
+{% load i18n %}
+
+{% block admin_title %}{{ page_title|default:_("Форма") }}{% endblock %}
+
+{% block page_header %}
+    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-3">
+        <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">{{ page_title|default:_("Форма об'єкта") }}</h1>
+        {% if back_url %}
+            <a href="{{ back_url }}" class="text-sm text-yellow-600 hover:text-yellow-500 font-medium inline-flex items-center">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                {% trans "Назад до списку" %}
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block admin_content %}
+    <form method="post" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8 space-y-8">
+        {% csrf_token %}
+
+        {% if form_title %}
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-3 mb-6">
+                {{ form_title }}
+            </h2>
+        {% endif %}
+
+        <div class="space-y-6">
+        {# Рендеримо основну форму #}
+            {% for field in form %}
+                <div class="form-field-group field-{{ field.name }}">
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        {{ field.label }}
+                        {% if field.field.required %}<span class="text-red-500 ml-0.5">*</span>{% endif %}
+                    </label>
+
+                    {% if field.field.widget.input_type == 'checkbox' %}
+                        <div class="flex items-center">
+                            {% render_field field class+="form-checkbox h-4 w-4 text-yellow-600 border-gray-300 dark:border-gray-600 rounded focus:ring-yellow-500 dark:bg-gray-700" %}
+                            {% if field.help_text %}
+                                <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</span>
+                            {% endif %}
+                        </div>
+                    {% elif field.field.widget.input_type == 'select' %}
+                        {% if field.field.widget.allow_multiple_selected %}
+                            {% render_field field class+="form-multiselect block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200 h-40" %}
+                        {% else %}
+                            {% render_field field class+="form-select block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200" %}
+                        {% endif %}
+                    {% elif field.field.widget|widget_type == 'clearablefileinput' %}
+                        {% if field.value and field.value.url %}
+                            <div class="mb-2">
+                                <img src="{{ field.value.url }}" alt="Поточне зображення для {{ field.label }}" class="max-h-32 max-w-xs rounded-md border border-gray-300 dark:border-gray-600">
+                            </div>
+                        {% endif %}
+                        {% render_field field class+="form-input block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-300 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" %}
+                    {% elif field.field.widget|widget_type == 'textareawidget' or field.field.widget|widget_type == 'textarea' %}
+                        {% render_field field class+="form-textarea block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200" rows="4" %}
+                    {% else %}
+                        {% render_field field class+="form-input block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200" %}
+                    {% endif %}
+
+                    {% if field.help_text and field.field.widget.input_type != 'checkbox' %}
+                        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="mt-1.5 text-xs text-red-500 dark:text-red-400">
+                            {% for error in field.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            {% if form.non_field_errors %}
+                <div class="mt-4 p-3 bg-red-50 dark:bg-red-800/30 text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-700">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+    {# Блок для інлайнових формсетів, якщо вони передані в контексті #}
+        {% block formsets %}
+            {% if image_formset %}
+            {# Тут приклад для image_formset, аналогічно для feature_formset #}
+                <fieldset class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <legend class="text-lg font-medium text-gray-900 dark:text-gray-200 mb-3">{% trans "Додаткові зображення" %}</legend>
+                    {{ image_formset.management_form }}
+                    <div class="space-y-4">
+                        {% for img_form in image_formset %}
+                            <div class="image-form-instance p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-md relative bg-gray-50 dark:bg-gray-700/30">
+                                {{ img_form.id }} {# Приховане поле ID для існуючих інлайнів #}
+                                {% if img_form.instance.pk and img_form.instance.image %}
+                                    <img src="{{ img_form.instance.image.url }}" alt="Зображення" class="h-20 w-20 object-cover rounded-md mb-2 border border-gray-200 dark:border-gray-600">
+                                {% endif %}
+                                {% for field in img_form %}
+                                    {% if field.name != 'id' and field.name != 'listing' and field.name != 'DELETE' %}
+                                        <div class="form-field-group mb-3">
+                                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                                            {% render_field field class+="form-input block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200" %}
+                                            {% if field.errors %}<div class="mt-1 text-xs text-red-500 dark:text-red-400">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if img_form.instance.pk and image_formset.can_delete %} {# Показуємо видалення тільки для збережених #}
+                                    <div class="form-field-group mt-2 flex items-center">
+                                        {% render_field img_form.DELETE class+="form-checkbox h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500" %}
+                                        <label for="{{ img_form.DELETE.id_for_label }}" class="ml-2 block text-sm text-red-500 dark:text-red-400">{% trans "Видалити це зображення" %}</label>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if image_formset.non_form_errors %}<div class="mt-1 text-xs text-red-500 dark:text-red-400">{% for error in image_formset.non_form_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                </fieldset>
+            {% endif %}
+
+            {% if feature_formset %}
+                <fieldset class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <legend class="text-lg font-medium text-gray-900 dark:text-gray-200 mb-3">{% trans "Характеристики" %}</legend>
+                    {{ feature_formset.management_form }}
+                    <div class="space-y-4">
+                        {% for feat_form in feature_formset %}
+                            <div class="feature-form-instance grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 mb-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md items-end bg-gray-50 dark:bg-gray-700/30">
+                                {{ feat_form.id }}
+                                {% for field in feat_form %}
+                                    {% if field.name != 'id' and field.name != 'listing' and field.name != 'DELETE' %}
+                                        <div class="form-field-group {% if field.name == 'icon_svg' %}md:col-span-2 lg:col-span-1{% endif %}">
+                                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                                            {% if field.name == 'icon_svg' %}
+                                                {% render_field field class+="form-textarea block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200" rows="2" %}
+                                            {% else %}
+                                                {% render_field field class+="form-input block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm dark:bg-gray-700 dark:text-gray-200" %}
+                                            {% endif %}
+                                            {% if field.errors %}<div class="mt-1 text-xs text-red-500 dark:text-red-400">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if feat_form.instance.pk and feature_formset.can_delete %}
+                                    <div class="form-field-group flex items-center pt-5 md:pt-0">
+                                        {% render_field feat_form.DELETE class+="form-checkbox h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500" %}
+                                        <label for="{{ feat_form.DELETE.id_for_label }}" class="ml-2 block text-sm text-red-500 dark:text-red-400">{% trans "Видалити" %}</label>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if feature_formset.non_form_errors %}<div class="mt-1 text-xs text-red-500 dark:text-red-400">{% for error in feature_formset.non_form_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                </fieldset>
+            {% endif %}
+        {% endblock %} {# Кінець блоку formsets #}
+
+
+        <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex justify-end gap-3">
+                <a href="{{ back_url|default:"#" }}" class="bg-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 py-2.5 px-5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    {% trans "Скасувати" %}
+                </a>
+                <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 py-2.5 px-5 rounded-lg shadow-sm text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    {{ button_text|default:_("Зберегти") }}
+                </button>
+            </div>
+        </div>
+    </form>
+{% endblock %}

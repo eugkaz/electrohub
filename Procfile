@@ -1,0 +1,1 @@
+web: gunicorn vivasonya.wsgi --log-file -
